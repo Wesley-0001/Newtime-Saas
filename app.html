@@ -640,18 +640,71 @@
         <h2><i class="fas fa-home"></i> Meu Painel</h2>
         <span class="page-sub" id="supervisor-greeting">Olá, Supervisor!</span>
       </div>
-      <div id="supervisor-alert" class="alert-banner hidden">
-        <i class="fas fa-bell"></i>
-        <span id="supervisor-alert-text"></span>
+      <div class="sup-dash-checklist-row" aria-label="Check-lists diários">
+        <div class="sup-dash-checklist-card">
+          <div class="sup-dash-checklist-head">
+            <span class="sup-dash-checklist-icon" aria-hidden="true"><i data-lucide="clipboard-check"></i></span>
+            <div class="sup-dash-checklist-text">
+              <div class="sup-dash-checklist-title">Check-lists Diários</div>
+              <p class="sup-dash-checklist-desc">Acesso rápido aos formulários de operação — abre em nova aba.</p>
+            </div>
+          </div>
+          <div class="sup-dash-checklist-actions">
+            <a class="sup-dash-checklist-btn sup-dash-checklist-btn--calandra" href="https://docs.google.com/forms/d/e/1FAIpQLSeXXVt5L6UsEyiwNs4SMdPnaBTkfXHsps4lCTh_NSxB9WscKA/viewform" target="_blank" rel="noopener noreferrer">
+              <i data-lucide="clipboard-check" class="sup-dash-checklist-btn-ic" aria-hidden="true"></i>
+              Calandra
+            </a>
+            <a class="sup-dash-checklist-btn sup-dash-checklist-btn--impressao" href="https://docs.google.com/forms/d/e/1FAIpQLSeXzik3pN5lX8qjICxlDlCKRQjXzRKQiSbceden2wHzTIZwdA/viewform" target="_blank" rel="noopener noreferrer">
+              <i data-lucide="clipboard-check" class="sup-dash-checklist-btn-ic" aria-hidden="true"></i>
+              Impressão
+            </a>
+          </div>
+        </div>
       </div>
       <div class="cards-grid-2">
-        <div class="stat-card blue"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-info"><span class="stat-value" id="sup-stat-total">0</span><span class="stat-label">Minha Equipe</span></div></div>
-        <div class="stat-card orange"><div class="stat-icon"><i class="fas fa-clipboard-check"></i></div><div class="stat-info"><span class="stat-value" id="sup-stat-pending">0</span><span class="stat-label">Aguardam Avaliação</span></div></div>
+        <div class="stat-card blue"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-info"><span class="stat-value" id="sup-stat-total">0</span><span class="stat-label">Colaboradores no seu escopo</span></div></div>
+        <div class="stat-card orange"><div class="stat-icon"><i class="fas fa-clipboard-check"></i></div><div class="stat-info"><span class="stat-value" id="sup-stat-pending">0</span><span class="stat-label">Pendentes de avaliação</span></div></div>
       </div>
-      <h3 class="section-title"><i class="fas fa-user-clock"></i> Funcionários Aptos para Avaliação</h3>
-      <div id="sup-eligible-list" class="employee-cards-list"></div>
-      <h3 class="section-title mt-20"><i class="fas fa-users"></i> Toda a Equipe</h3>
-      <div id="sup-all-list" class="employee-cards-list"></div>
+      <div class="dashboard-row sup-dash-alerts-row">
+        <div id="sup-dash-alert-eval" class="sup-dash-alert sup-dash-alert--ok" role="status">
+          <div class="sup-dash-alert-inner">
+            <div class="sup-dash-alert-icon" aria-hidden="true"><i class="fas fa-calendar-check"></i></div>
+            <div class="sup-dash-alert-main">
+              <div class="sup-dash-alert-title">Vencimento de avaliações</div>
+              <p id="sup-dash-alert-eval-sub" class="sup-dash-alert-desc"></p>
+              <button type="button" class="btn-outline btn-sm sup-dash-alert-btn" onclick="navigateTo('supervisor-employees')"><i class="fas fa-users"></i> Minha Equipe</button>
+            </div>
+            <div id="sup-dash-alert-eval-val" class="sup-dash-alert-val">0</div>
+          </div>
+        </div>
+        <div id="sup-dash-alert-abs" class="sup-dash-alert sup-dash-alert--warn" role="status">
+          <div class="sup-dash-alert-inner">
+            <div class="sup-dash-alert-icon" aria-hidden="true"><i class="fas fa-user-slash"></i></div>
+            <div class="sup-dash-alert-main">
+              <div class="sup-dash-alert-title">Faltas não justificadas na semana</div>
+              <p id="sup-dash-alert-abs-sub" class="sup-dash-alert-desc"></p>
+              <button type="button" class="btn-outline btn-sm sup-dash-alert-btn" onclick="navigateTo('supervisor-team-attendance')"><i class="fas fa-clipboard-check"></i> Frequência da equipe</button>
+            </div>
+            <div id="sup-dash-alert-abs-val" class="sup-dash-alert-val">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="dashboard-row sup-dash-charts-row">
+        <div class="chart-card sup-dash-chart-card">
+          <div class="chart-card-header">
+            <h3><i class="fas fa-chart-pie"></i> Distribuição por cargo</h3>
+            <p class="chart-card-sub">Somente colaboradores vinculados ao seu usuário (equipe)</p>
+          </div>
+          <div class="sup-chart-wrap"><canvas id="sup-chart-cargo-pie"></canvas></div>
+        </div>
+        <div class="chart-card sup-dash-chart-card">
+          <div class="chart-card-header">
+            <h3><i class="fas fa-bars-staggered"></i> Progresso de carreira</h3>
+            <p id="sup-chart-career-sub" class="chart-card-sub">Média da equipe: 0% · barras = progresso rumo ao tempo mínimo do cargo desejado</p>
+          </div>
+          <div class="sup-chart-wrap"><canvas id="sup-chart-career-bar"></canvas></div>
+        </div>
+      </div>
       <div class="promo-shortcut-banner" id="promo-shortcut-banner-container" onclick="navigateTo('supervisor-promo-history')" style="margin-top:20px;display:none">
         <div class="promo-shortcut-content">
           <i class="fas fa-rocket"></i>
@@ -707,34 +760,46 @@
         <span class="page-sub" id="da-page-sub">Lançamento diário por colaborador — um documento por dia e equipe</span>
       </div>
       <div class="da-toolbar" id="da-toolbar">
-        <!-- input nativo: fica sincronizado com o calendário (fallback) -->
-        <div class="form-group da-date-field" hidden>
-          <label for="da-attendance-date">Data</label>
-          <input type="date" id="da-attendance-date" />
-        </div>
+        <div class="da-toolbar-grid">
+          <div class="da-toolbar-main">
+            <!-- input nativo: fica sincronizado com o calendário (fallback) -->
+            <div class="form-group da-date-field" hidden>
+              <label for="da-attendance-date">Data</label>
+              <input type="date" id="da-attendance-date" />
+            </div>
 
-        <div class="da-toolbar-filters">
-          <!-- Seletor de equipe (apenas Admin/Gerente) -->
-          <div class="form-group da-team-picker" id="da-team-picker" hidden>
-            <label for="da-team-select"><i class="fas fa-user-tie"></i> Equipe (Supervisor)</label>
-            <select id="da-team-select" class="da-team-select" aria-label="Selecionar equipe do supervisor"></select>
+            <div class="da-toolbar-filters">
+              <!-- Seletor de equipe (apenas Admin/Gerente) -->
+              <div class="form-group da-team-picker" id="da-team-picker" hidden>
+                <label for="da-team-select"><i class="fas fa-user-tie"></i> Equipe (Supervisor)</label>
+                <select id="da-team-select" class="da-team-select" aria-label="Selecionar equipe do supervisor"></select>
+              </div>
+
+              <div class="form-group da-month-stepper-wrap" id="da-month-stepper-wrap">
+                <span class="da-month-stepper-label" id="da-month-stepper-label"><i class="fas fa-calendar-alt"></i> Mês</span>
+                <div class="da-month-stepper" role="group" aria-label="Navegar mês de referência">
+                  <button type="button" class="da-month-step-btn" id="da-month-prev" aria-label="Mês anterior">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                  </button>
+                  <div class="da-month-step-label" id="da-month-step-label" aria-live="polite">—</div>
+                  <button type="button" class="da-month-step-btn" id="da-month-next" aria-label="Próximo mês">
+                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div class="form-group da-month-stepper-wrap" id="da-month-stepper-wrap">
-            <span class="da-month-stepper-label" id="da-month-stepper-label"><i class="fas fa-calendar-alt"></i> Mês</span>
-            <div class="da-month-stepper" role="group" aria-label="Navegar mês de referência">
-              <button type="button" class="da-month-step-btn" id="da-month-prev" aria-label="Mês anterior">
-                <i class="fas fa-chevron-left" aria-hidden="true"></i>
+          <div class="da-toolbar-calendar-wrap">
+            <div class="da-calendar-panel" id="da-calendar-panel">
+              <button type="button" class="da-cal-panel-toggle" id="da-cal-panel-toggle" aria-expanded="true" aria-controls="da-calendar">
+                <span class="da-cal-panel-toggle__text"><i class="fas fa-calendar-days" aria-hidden="true"></i> Calendário</span>
+                <i class="fas fa-chevron-down da-cal-panel-toggle__chev" aria-hidden="true"></i>
               </button>
-              <div class="da-month-step-label" id="da-month-step-label" aria-live="polite">—</div>
-              <button type="button" class="da-month-step-btn" id="da-month-next" aria-label="Próximo mês">
-                <i class="fas fa-chevron-right" aria-hidden="true"></i>
-              </button>
+              <div id="da-calendar" class="da-calendar" aria-label="Navegação de calendário"></div>
             </div>
           </div>
         </div>
-
-        <div id="da-calendar" class="da-calendar" aria-label="Navegação de calendário"></div>
       </div>
       <p id="da-doc-hint" class="page-sub da-doc-hint"></p>
       <div class="da-view" id="da-view">
@@ -946,36 +1011,40 @@
         </section>
 
         <!-- Modo edição (input da frequência) -->
-        <div class="table-wrapper da-edit-wrap" id="da-edit-wrap">
-          <div class="da-mark-all-row" id="da-mark-all-row" hidden>
-            <div class="da-bulk-toolbar" role="group" aria-label="Ações em massa na lista">
-              <p class="da-bulk-toolbar-hint">Altera apenas quem está em «Não definido». Não salva no Firestore até você clicar em Salvar.</p>
-              <div class="da-bulk-toolbar-btns">
-                <button type="button" class="btn-outline da-bulk-chip" id="da-bulk-presente" data-da-bulk="presente" title="Presente apenas para quem ainda está em Não definido">
-                  <i class="fas fa-user-check" aria-hidden="true"></i> Marcar todos como Presente
-                </button>
-                <button type="button" class="btn-outline da-bulk-chip" id="da-bulk-folga" data-da-bulk="folga" title="Folga apenas para quem ainda está em Não definido">
-                  <i class="fas fa-umbrella-beach" aria-hidden="true"></i> Marcar todos como Folga
-                </button>
-                <button type="button" class="btn-outline da-bulk-chip" id="da-bulk-cancelado" data-da-bulk="turno_cancelado" title="Turno cancelado apenas para quem ainda está em Não definido">
-                  <i class="fas fa-ban" aria-hidden="true"></i> Marcar todos como Turno Cancelado
-                </button>
+        <div class="da-daily-editor" id="da-daily-editor">
+          <div class="table-wrapper da-edit-wrap" id="da-edit-wrap">
+            <table class="data-table da-attendance-table">
+              <thead>
+                <tr>
+                  <th>Colaborador</th>
+                  <th>Situação do dia</th>
+                </tr>
+              </thead>
+              <tbody id="da-attendance-tbody"></tbody>
+            </table>
+          </div>
+          <div class="da-daily-sticky-footer" id="da-daily-sticky-footer">
+            <div class="da-mark-all-row" id="da-mark-all-row" hidden>
+              <div class="da-bulk-toolbar" role="group" aria-label="Ações em massa na lista">
+                <p class="da-bulk-toolbar-hint">Altera apenas quem está em «Não definido». Não salva no Firestore até você clicar em Salvar.</p>
+                <div class="da-bulk-toolbar-btns">
+                  <button type="button" class="btn-outline da-bulk-chip" id="da-bulk-presente" data-da-bulk="presente" title="Presente apenas para quem ainda está em Não definido">
+                    <i class="fas fa-user-check" aria-hidden="true"></i> Marcar todos como Presente
+                  </button>
+                  <button type="button" class="btn-outline da-bulk-chip" id="da-bulk-folga" data-da-bulk="folga" title="Folga apenas para quem ainda está em Não definido">
+                    <i class="fas fa-umbrella-beach" aria-hidden="true"></i> Marcar todos como Folga
+                  </button>
+                  <button type="button" class="btn-outline da-bulk-chip" id="da-bulk-cancelado" data-da-bulk="turno_cancelado" title="Turno cancelado apenas para quem ainda está em Não definido">
+                    <i class="fas fa-ban" aria-hidden="true"></i> Marcar todos como Turno Cancelado
+                  </button>
+                </div>
               </div>
             </div>
+            <div class="da-save-row da-save-row--sticky" id="da-save-row">
+              <button type="button" class="btn-primary" id="da-save-btn"><i class="fas fa-save"></i> Salvar frequência do dia</button>
+              <button type="button" class="btn-outline" id="da-cancel-edit-btn" hidden><i class="fas fa-undo"></i> Cancelar edição</button>
+            </div>
           </div>
-          <table class="data-table da-attendance-table">
-            <thead>
-              <tr>
-                <th>Colaborador</th>
-                <th>Situação do dia</th>
-              </tr>
-            </thead>
-            <tbody id="da-attendance-tbody"></tbody>
-          </table>
-        </div>
-        <div class="da-save-row" id="da-save-row">
-          <button type="button" class="btn-primary" id="da-save-btn"><i class="fas fa-save"></i> Salvar frequência do dia</button>
-          <button type="button" class="btn-outline" id="da-cancel-edit-btn" hidden><i class="fas fa-undo"></i> Cancelar edição</button>
         </div>
       </div>
 
@@ -1213,6 +1282,7 @@
 </div>
 
 <!-- Scripts -->
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 <script src="js/data.js"></script>
 <script src="js/rh-data.js"></script>
 <script type="module" src="js/firebase-db.js"></script>

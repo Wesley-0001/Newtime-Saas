@@ -27,6 +27,8 @@ window.toggleDarkMode = function(isDark) {
   // Atualiza tooltip
   const label = document.getElementById('dark-toggle-label');
   if (label) label.title = isDark ? 'Modo claro' : 'Modo escuro';
+
+  document.dispatchEvent(new CustomEvent('lumini-theme-changed', { detail: { isDark } }));
 };
 
 // Inicializa o estado visual do toggle ao DOM estar pronto
@@ -135,6 +137,12 @@ function startApp() {
     window._ntSubscribeInAppNotifications(currentUser.email);
   }
   if (window._ntInitInAppNotifications) window._ntInitInAppNotifications();
+  if (!window._ntLuminiThemeListenerBound) {
+    window._ntLuminiThemeListenerBound = true;
+    document.body.addEventListener('lumini-theme-changed', () => {
+      if (typeof window._ntRefreshAllChartsTheme === 'function') window._ntRefreshAllChartsTheme();
+    });
+  }
   updateNotifBadge();
   initNotifications();
   updateExcecoesBadges();
@@ -1749,47 +1757,380 @@ function renderReports() {
   }).join('');
 }
 
-// ─── SUPERVISOR HOME ──────────────────────────
+// ─── SUPERVISOR HOME (Meu Painel) ─────────────
+function _ntNormForSupScope(v) {
+  if (typeof window._ntNormalizeTeamId === 'function') return window._ntNormalizeTeamId(String(v || '').trim());
+  return String(v || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
+}
+
+function _ntEmployeeBelongsToSupervisorScope(e, supUser) {
+  if (!e || !supUser) return false;
+  const uid = String(supUser.uid || '').trim();
+  if (uid && String(e.supervisor_id || '').trim() === uid) return true;
+  const supEmail = String(supUser.email || '').trim().toLowerCase();
+  const empSup = String(e.supervisor != null ? e.supervisor : '').trim();
+  if (empSup && supEmail && empSup.toLowerCase() === supEmail) return true;
+  const supKey = String(supUser.leaderKey || '').trim();
+  const nEmp = _ntNormForSupScope(e.teamId || empSup);
+  const nSup = _ntNormForSupScope(supKey || supEmail);
+  if (nEmp && nSup && nEmp === nSup) return true;
+  return false;
+}
+
+function _ntMyTeamEmployees(employees) {
+  if (!currentUser || !Array.isArray(employees)) return [];
+  const r = String(currentUser.role || '').toLowerCase();
+  if (r !== 'supervisor') return employees.slice();
+  return employees.filter(e => _ntEmployeeBelongsToSupervisorScope(e, currentUser));
+}
+
+window.NT_EVAL_MIN_TENURE_DAYS = typeof window.NT_EVAL_MIN_TENURE_DAYS === 'number' ? window.NT_EVAL_MIN_TENURE_DAYS : 60;
+const _NT_EVAL_CYCLE_DAYS = 90;
+
+function _ntAdmissionDays(admissionDate) {
+  if (!admissionDate) return 0;
+  const raw = String(admissionDate).trim();
+  const adm = new Date(raw + (raw.includes('T') ? '' : 'T12:00:00'));
+  if (Number.isNaN(adm.getTime())) return 0;
+  return Math.max(0, Math.floor((Date.now() - adm.getTime()) / 86400000));
+}
+
+function _lastEvalDateForEmployee(empId, evaluations) {
+  let best = null;
+  for (const ev of evaluations || []) {
+    if (!ev || ev.employeeId !== empId) continue;
+    const d = ev.date ? String(ev.date).trim() : '';
+    if (!d) continue;
+    if (!best || d > best) best = d;
+  }
+  return best;
+}
+
+function _ntDaysSinceYmd(ymd) {
+  const d = new Date(String(ymd).trim() + 'T12:00:00');
+  if (Number.isNaN(d.getTime())) return 0;
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+
+function _isAwaitingSupervisorEvaluation(e, evaluations) {
+  if (!e) return false;
+  const minTen = typeof window.NT_EVAL_MIN_TENURE_DAYS === 'number' ? window.NT_EVAL_MIN_TENURE_DAYS : 60;
+  const admDays = _ntAdmissionDays(e.admission);
+  const last = _lastEvalDateForEmployee(e.id, evaluations);
+  if (!last) return admDays >= minTen;
+  return _ntDaysSinceYmd(last) > _NT_EVAL_CYCLE_DAYS;
+}
+
+function _ntCareerProgressPctOnly(e) {
+  return getStatusInfo(e).pct;
+}
+
+function _ntShortEmpLabel(name, maxLen) {
+  const n = maxLen == null ? 16 : maxLen;
+  const s = String(name || '').trim();
+  if (s.length <= n) return s;
+  return s.slice(0, Math.max(1, n - 1)) + '…';
+}
+
+function _ntIsoWeekRangeMonSun() {
+  const now = new Date();
+  const dow = (now.getDay() + 6) % 7;
+  const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow);
+  mon.setHours(0, 0, 0, 0);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
+  const fmt = d =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return { start: fmt(mon), end: fmt(sun) };
+}
+
+function _ntSupTeamScopeKey() {
+  if (!currentUser) return '';
+  if (typeof window._ntSupervisorTeamKeyForAttendance === 'function') {
+    const k = window._ntSupervisorTeamKeyForAttendance();
+    if (k) return k;
+  }
+  const em = String(currentUser.email || '').trim();
+  return _ntNormForSupScope(currentUser.leaderKey || em);
+}
+
+async function _ntSupWeeklyFaltaCount(teamKey) {
+  if (!teamKey || typeof window._ntGetDailyAttendanceSummariesForTeam !== 'function') return null;
+  if (!window._dbReady) return null;
+  try {
+    const { start, end } = _ntIsoWeekRangeMonSun();
+    const map = await window._ntGetDailyAttendanceSummariesForTeam({ teamId: teamKey, startDate: start, endDate: end });
+    let total = 0;
+    if (map && typeof map.values === 'function') {
+      for (const sum of map.values()) total += (sum && sum.faltas) || 0;
+    }
+    return total;
+  } catch (e) {
+    console.warn('[sup dashboard] weekly falta', e);
+    return null;
+  }
+}
+
+window._ntChartPalette = function () {
+  const st = getComputedStyle(document.body);
+  const g = k => (st.getPropertyValue(k) || '').trim();
+  return {
+    tooltipBg: g('--chart-tooltip-bg') || '#1F2937',
+    tooltipColor: g('--chart-tooltip-color') || '#F9FAFB',
+    axisTick: g('--chart-axis-tick') || '#9CA3AF',
+    axisLabel: g('--chart-axis-label') || '#6B7280',
+    gridColor: g('--chart-grid-color') || '#F3F4F6',
+    donutBorder: g('--chart-donut-border') || '#FFFFFF',
+    legendText: g('--chart-legend-text') || '#374151',
+  };
+};
+
+window._ntSupDashLastMyTeam = null;
+
+window._ntRefreshAllChartsTheme = function () {
+  const team = window._ntSupDashLastMyTeam;
+  if (team && typeof _renderSupervisorDashboardCharts === 'function') _renderSupervisorDashboardCharts(team);
+};
+
+function _renderSupervisorDashboardCharts(myTeam) {
+  window._ntSupDashLastMyTeam = myTeam;
+  const pieCtx = document.getElementById('sup-chart-cargo-pie');
+  const barCtx = document.getElementById('sup-chart-career-bar');
+  if (typeof Chart === 'undefined') return;
+
+  const pal = window._ntChartPalette ? window._ntChartPalette() : {};
+  const tt = {
+    backgroundColor: pal.tooltipBg,
+    titleColor: pal.tooltipColor,
+    bodyColor: pal.tooltipColor,
+    padding: 10,
+    cornerRadius: 8,
+  };
+
+  if (window.chartSupCargoPie) {
+    window.chartSupCargoPie.destroy();
+    window.chartSupCargoPie = null;
+  }
+  if (window.chartSupCareerBar) {
+    window.chartSupCareerBar.destroy();
+    window.chartSupCareerBar = null;
+  }
+
+  const palette = ['#002B5B', '#1B4F8A', '#0F766E', '#7B2D8B', '#B45309', '#0891B2', '#1D4ED8', '#BE185D', '#92400E', '#4338CA'];
+
+  if (pieCtx) {
+    let labels;
+    let data;
+    let colors;
+    let pieTotal;
+    if (!myTeam.length) {
+      labels = ['Sem colaboradores'];
+      data = [1];
+      colors = ['#CBD5E1'];
+      pieTotal = 1;
+    } else {
+      const counts = {};
+      myTeam.forEach(e => {
+        const r = (e.currentRole && String(e.currentRole).trim()) || 'Sem cargo';
+        counts[r] = (counts[r] || 0) + 1;
+      });
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      labels = sorted.map(([l]) => l);
+      data = sorted.map(([, v]) => v);
+      colors = labels.map((_, i) => palette[i % palette.length]);
+      pieTotal = data.reduce((a, b) => a + b, 0) || 1;
+    }
+
+    window.chartSupCargoPie = new Chart(pieCtx, {
+      type: 'pie',
+      data: {
+        labels,
+        datasets: [
+          {
+            data,
+            backgroundColor: colors,
+            borderWidth: 2,
+            borderColor: pal.donutBorder,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              color: pal.legendText,
+              boxWidth: 12,
+              font: { size: 11 },
+            },
+          },
+          tooltip: {
+            ...tt,
+            callbacks: {
+              label(ctx) {
+                const v = ctx.dataset.data[ctx.dataIndex];
+                if (!myTeam.length) return ' Adicione colaboradores ao seu escopo';
+                const pct = Math.round((v / pieTotal) * 100);
+                return ` ${ctx.label}: ${v} (${pct}%)`;
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  if (barCtx) {
+    let rows = myTeam
+      .map(e => ({ label: _ntShortEmpLabel(e.name, 16), pct: _ntCareerProgressPctOnly(e) }))
+      .sort((a, b) => b.pct - a.pct);
+    if (!rows.length) rows = [{ label: '—', pct: 0 }];
+
+    const labelsB = rows.map(r => r.label);
+    const dataB = rows.map(r => r.pct);
+    const barColors = dataB.map(pct => (pct >= 100 ? '#059669' : pct >= 50 ? '#D97706' : '#DC2626'));
+
+    window.chartSupCareerBar = new Chart(barCtx, {
+      type: 'bar',
+      data: {
+        labels: labelsB,
+        datasets: [
+          {
+            label: '%',
+            data: dataB,
+            backgroundColor: barColors,
+            borderRadius: 6,
+            borderSkipped: false,
+            maxBarThickness: 18,
+          },
+        ],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 400, easing: 'easeOutQuart' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            ...tt,
+            callbacks: {
+              label(ctx) {
+                const raw = ctx.parsed && typeof ctx.parsed.x === 'number' ? ctx.parsed.x : ctx.parsed;
+                const v = typeof raw === 'number' ? raw : 0;
+                return ` ${v}%`;
+              },
+            },
+          },
+        },
+        scales: {
+          x: {
+            min: 0,
+            max: 100,
+            ticks: {
+              stepSize: 20,
+              callback(v) {
+                return `${v}%`;
+              },
+              color: pal.axisTick,
+            },
+            grid: { color: pal.gridColor },
+            border: { display: false },
+          },
+          y: {
+            ticks: { color: pal.axisTick, font: { size: 11, weight: '500' } },
+            grid: { display: false },
+            border: { display: false },
+          },
+        },
+      },
+    });
+  }
+}
+
 function renderSupervisorHome() {
   const employees = getEmployees();
-  const myTeam    = currentUser.role==='supervisor' ? employees.filter(e=>e.supervisor===currentUser.email) : employees;
-  const eligible  = myTeam.filter(e => e.minMonths && calcTenure(e.admission)>=e.minMonths && e.status==='ready');
-  const pending   = myTeam.filter(e => ['pending_samuel','pending_samuel_return','pending_carlos'].includes(e.status));
+  const evaluations = getEvaluations();
+  const myTeam = _ntMyTeamEmployees(employees);
+  const eligible = myTeam.filter(e => _isAwaitingSupervisorEvaluation(e, evaluations));
+  const pending = myTeam.filter(e => ['pending_samuel', 'pending_samuel_return', 'pending_carlos'].includes(e.status));
 
-  document.getElementById('supervisor-greeting').textContent = `Olá, ${currentUser.name}! 👋`;
+  const greet = document.getElementById('supervisor-greeting');
+  if (greet) greet.textContent = `Olá, ${currentUser.name}! 👋`;
 
-  const alertEl = document.getElementById('supervisor-alert');
-  const alertTxt= document.getElementById('supervisor-alert-text');
-  if (eligible.length > 0) {
-    alertEl.classList.remove('hidden');
-    alertTxt.textContent = `Você tem ${eligible.length} funcionário${eligible.length>1?'s':''} aguardando avaliação!`;
-  } else {
-    alertEl.classList.add('hidden');
+  const nPend = eligible.length;
+  const totEl = document.getElementById('sup-stat-total');
+  const pendEl = document.getElementById('sup-stat-pending');
+  if (totEl) totEl.textContent = String(myTeam.length);
+  if (pendEl) pendEl.textContent = String(nPend);
+
+  const evalCard = document.getElementById('sup-dash-alert-eval');
+  const evalSub = document.getElementById('sup-dash-alert-eval-sub');
+  const evalVal = document.getElementById('sup-dash-alert-eval-val');
+  if (evalCard) {
+    evalCard.classList.remove('sup-dash-alert--ok', 'sup-dash-alert--warn');
+    evalCard.classList.add(nPend === 0 ? 'sup-dash-alert--ok' : 'sup-dash-alert--warn');
   }
+  if (evalSub) {
+    evalSub.textContent =
+      nPend === 0
+        ? 'Nenhum colaborador está fora do ciclo de avaliação (90 dias) ou aguardando primeira avaliação após o tempo mínimo de casa.'
+        : `${nPend} colaborador${nPend !== 1 ? 'es' : ''} precisam de avaliação (tempo de casa ou ciclo de 90 dias).`;
+  }
+  if (evalVal) evalVal.textContent = String(nPend);
 
-  document.getElementById('sup-stat-total').textContent   = myTeam.length;
-  document.getElementById('sup-stat-pending').textContent = eligible.length;
+  const absCard = document.getElementById('sup-dash-alert-abs');
+  const absSub = document.getElementById('sup-dash-alert-abs-sub');
+  const absVal = document.getElementById('sup-dash-alert-abs-val');
+  if (absCard) {
+    absCard.classList.remove('sup-dash-alert--ok', 'sup-dash-alert--warn', 'sup-dash-alert--danger');
+    absCard.classList.add('sup-dash-alert--warn');
+  }
+  if (absSub) absSub.textContent = 'Carregando frequência da semana (segunda a domingo)…';
+  if (absVal) absVal.textContent = '…';
 
-  const eligibleEl = document.getElementById('sup-eligible-list');
-  if (eligibleEl) {
-    if (!eligible.length) {
-      eligibleEl.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle"></i><p>Nenhum funcionário aguardando avaliação</p></div>`;
-    } else {
-      eligibleEl.innerHTML = eligible.map(e => buildEmployeeCard(e, true)).join('');
+  const teamKey = _ntSupTeamScopeKey();
+  _ntSupWeeklyFaltaCount(teamKey).then(faltaN => {
+    if (currentPage !== 'supervisor-home') return;
+    const c = document.getElementById('sup-dash-alert-abs');
+    const s = document.getElementById('sup-dash-alert-abs-sub');
+    const v = document.getElementById('sup-dash-alert-abs-val');
+    if (!c || !s || !v) return;
+    c.classList.remove('sup-dash-alert--ok', 'sup-dash-alert--warn', 'sup-dash-alert--danger');
+    if (faltaN === null) {
+      c.classList.add('sup-dash-alert--warn');
+      v.textContent = '—';
+      s.textContent = 'Frequência indisponível (conexão ou Firebase).';
+      return;
     }
-  }
-
-  const allEl = document.getElementById('sup-all-list');
-  if (allEl) {
-    const non_eligible = myTeam.filter(e => !eligible.includes(e));
-    if (!non_eligible.length && !eligible.length) {
-      allEl.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><p>Nenhum funcionário na equipe ainda</p></div>`;
+    if (faltaN === 0) {
+      c.classList.add('sup-dash-alert--ok');
+      v.textContent = '0';
+      s.textContent =
+        'Semana local (segunda a domingo). Atestados e folgas não entram nesta contagem de faltas não justificadas.';
     } else {
-      allEl.innerHTML = non_eligible.map(e => buildEmployeeCard(e, false)).join('');
+      c.classList.add('sup-dash-alert--danger');
+      v.textContent = String(faltaN);
+      s.textContent =
+        'Semana local (segunda a domingo). Atestados e folgas não entram nesta contagem de faltas não justificadas.';
     }
+  });
+
+  const subCareer = document.getElementById('sup-chart-career-sub');
+  if (subCareer) {
+    const avg = myTeam.length
+      ? Math.round(myTeam.reduce((acc, e) => acc + _ntCareerProgressPctOnly(e), 0) / myTeam.length)
+      : 0;
+    subCareer.textContent = `Média da equipe: ${avg}% · barras = progresso rumo ao tempo mínimo do cargo desejado`;
   }
 
-  // Banner de promoções em andamento
+  _renderSupervisorDashboardCharts(myTeam);
+
   const bannerContainer = document.getElementById('promo-shortcut-banner-container');
   if (bannerContainer && pending.length > 0) {
     bannerContainer.style.display = '';
@@ -1798,56 +2139,17 @@ function renderSupervisorHome() {
   } else if (bannerContainer) {
     bannerContainer.style.display = 'none';
   }
-}
 
-function buildEmployeeCard(e, isEligible) {
-  const months = calcTenure(e.admission);
-  const si     = getStatusInfo(e);
-  const pct    = si.pct;
-  const pColor = getProgressColor(pct);
-
-  let actionBtn = '';
-  // Nunca mostra "Avaliar" se já está em fluxo de promoção
-  const blockedStatuses = _PROMO_BLOCKED_STATUSES;
-  if (e.status === 'ready' && isEligible && !blockedStatuses.includes(e.status)) {
-    actionBtn = `<button class="btn-primary btn-sm" onclick="startEvaluation('${e.id}')"><i class="fas fa-star"></i> Avaliar Agora</button>`;
-  } else if (e.status === 'pending_samuel') {
-    actionBtn = `<button class="btn-outline btn-sm" disabled><i class="fas fa-hourglass-half"></i> Aguardando André...</button>`;
-  } else if (e.status === 'pending_carlos') {
-    actionBtn = `<button class="btn-outline btn-sm" disabled><i class="fas fa-crown"></i> Aguardando Carlos...</button>`;
-  } else if (e.status === 'pending_samuel_return') {
-    actionBtn = `<button class="btn-outline btn-sm" disabled><i class="fas fa-arrow-left"></i> Retorno do Diretor</button>`;
-  } else if (e.status === 'promoted') {
-    actionBtn = `<div class="promo-badge-celebrate">🎉 Promovido!</div>`;
-  } else if (hasPendingExcecao(e.id)) {
-    actionBtn = supervisorExcecaoPendingButton();
-  } else if (canShowSupervisorExcecaoButton(e)) {
-    actionBtn = `<button class="btn-outline btn-sm" onclick="openExceptionRequest('${e.id}')"><i class="fas fa-file-signature"></i> Exceção</button>`;
-  } else if (canShowSupervisorPromoButton(e)) {
-    actionBtn = `<button class="btn-outline btn-sm" onclick="openPromoRequest('${e.id}')"><i class="fas fa-rocket"></i> Solicitar Promoção</button>`;
+  if (typeof lucide !== 'undefined' && lucide.createIcons) {
+    lucide.createIcons();
   }
-
-  return `
-  <div class="emp-card ${e.status==='promoted'?'emp-card-promoted':''}">
-    <div class="emp-card-avatar">${getInitials(e.name)}</div>
-    <div class="emp-card-info">
-      <div class="emp-card-name">${e.name}</div>
-      <div class="emp-card-role">${e.currentRole}${e.desiredRole?` → ${e.desiredRole}`:''}</div>
-      <div class="emp-card-tenure">${tenureText(months)} · Admitido em ${formatDate(e.admission)}</div>
-      <div class="emp-card-status"><span class="status-badge ${si.cls}">${si.label}</span></div>
-      <div class="progress-wrap mt-8">
-        <div class="progress-bar-bg"><div class="progress-bar-fill ${pColor}" style="width:${pct}%"></div></div>
-        <span class="progress-pct">${pct}%</span>
-      </div>
-    </div>
-    <div class="emp-card-actions">${actionBtn}</div>
-  </div>`;
 }
 
 // ─── SUPERVISOR TEAM ──────────────────────────
 function renderSupervisorTeam() {
   const employees = getEmployees();
-  const myTeam    = currentUser.role==='supervisor' ? employees.filter(e=>e.supervisor===currentUser.email) : employees;
+  const evaluations = getEvaluations();
+  const myTeam    = _ntMyTeamEmployees(employees);
   const query     = (document.getElementById('search-sup-employees')?.value||'').toLowerCase();
   const filtered  = myTeam.filter(e => e.name.toLowerCase().includes(query)||(e.currentRole||'').toLowerCase().includes(query));
 
@@ -1863,6 +2165,7 @@ function renderSupervisorTeam() {
     const months  = calcTenure(e.admission);
     const si      = getStatusInfo(e);
     const pColor  = getProgressColor(si.pct);
+    const canEval = _isAwaitingSupervisorEvaluation(e, evaluations) && !_PROMO_BLOCKED_STATUSES.includes(e.status);
     return `<tr>
       <td>
         <div class="emp-name-cell">
@@ -1876,7 +2179,7 @@ function renderSupervisorTeam() {
       <td><span class="status-badge ${si.cls}">${si.label}</span></td>
       <td>
         <div class="action-btns">
-          ${e.status==='ready'&&!_PROMO_BLOCKED_STATUSES.includes(e.status)?`<button class="btn-primary btn-sm" onclick="startEvaluation('${e.id}')"><i class="fas fa-star"></i> Avaliar</button>`:''}
+          ${canEval?`<button class="btn-primary btn-sm" onclick="startEvaluation('${e.id}')"><i class="fas fa-star"></i> Avaliar</button>`:''}
           ${hasPendingExcecao(e.id)?supervisorExcecaoPendingButton():''}
           ${!hasPendingExcecao(e.id)&&canShowSupervisorExcecaoButton(e)?`<button class="btn-outline btn-sm" onclick="openExceptionRequest('${e.id}')"><i class="fas fa-file-signature"></i> Exceção</button>`:''}
           ${canShowSupervisorPromoButton(e)?`<button class="btn-outline btn-sm" onclick="openPromoRequest('${e.id}')"><i class="fas fa-rocket"></i> Promoção</button>`:''}
@@ -2684,7 +2987,7 @@ function updateExcecoesBadges() {
 // ─── SUPERVISOR PROMO HISTORY ─────────────────
 function renderSupervisorPromoPage() {
   const employees = getEmployees();
-  const myTeam    = currentUser.role==='supervisor' ? employees.filter(e=>e.supervisor===currentUser.email) : employees;
+  const myTeam    = _ntMyTeamEmployees(employees);
   renderPromoHistory('sup-', myTeam);
 }
 

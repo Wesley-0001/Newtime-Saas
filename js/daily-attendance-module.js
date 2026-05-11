@@ -691,6 +691,8 @@
     _animateToggle('da-edit-wrap', !!on, 'is-block');
     const row = document.getElementById('da-save-row');
     if (row) row.style.display = on ? '' : 'none';
+    const shell = document.getElementById('da-daily-editor');
+    if (shell) shell.style.display = on ? '' : 'none';
   }
   function _setExecSummaryVisible(on) {
     _animateToggle('da-exec-summary', !!on);
@@ -1134,6 +1136,27 @@
         if (_state && _state.dateStr) _loadFromFirestore(_state.dateStr);
       });
     }
+  }
+
+  function _ensureCalendarPanelToggle() {
+    const btn = document.getElementById('da-cal-panel-toggle');
+    const panel = document.getElementById('da-calendar-panel');
+    if (!btn || !panel || btn.dataset.daCalToggleBound) return;
+    btn.dataset.daCalToggleBound = '1';
+    btn.addEventListener('click', () => {
+      const collapsed = panel.classList.toggle('da-calendar-panel--collapsed');
+      btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    });
+    const mq = window.matchMedia('(min-width: 1200px)');
+    const applyMq = () => {
+      if (mq.matches) {
+        panel.classList.remove('da-calendar-panel--collapsed');
+        btn.setAttribute('aria-expanded', 'true');
+      }
+    };
+    if (typeof mq.addEventListener === 'function') mq.addEventListener('change', applyMq);
+    else if (typeof mq.addListener === 'function') mq.addListener(applyMq);
+    applyMq();
   }
 
   // ────────── Bind do calendário (delegação) ──────────
@@ -2205,6 +2228,7 @@
 
     _renderCalendarSkeleton();
     _ensureCalendarDelegates();
+    _ensureCalendarPanelToggle();
     _bindMonthStepper();
     _ensureAssiduityFlytipBound();
     _ensureResultLayerButtonsBound();
@@ -2248,4 +2272,10 @@
   };
 
   window._daSlotToAttendanceClass = _assiduitySlotToStatusClass;
+
+  /** Mesma chave usada em `daily_attendance` / Frequência da Equipe para o supervisor logado. */
+  window._ntSupervisorTeamKeyForAttendance = function () {
+    if (!_isSupervisor()) return '';
+    return _supervisorTeamKeyForCurrentUser();
+  };
 })();
