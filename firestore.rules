@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function authed() {
+      return request.auth != null;
+    }
+
+    function tokenRole() {
+      return authed() && request.auth.token.role is string
+        ? request.auth.token.role
+        : '';
+    }
+
+    function tokenTeamId() {
+      return authed() && request.auth.token.teamId is string
+        ? request.auth.token.teamId
+        : '';
+    }
+
+    function tokenLeaderKey() {
+      return authed() && request.auth.token.leaderKey is string
+        ? request.auth.token.leaderKey
+        : '';
+    }
+
+    function isPrivileged() {
+      let r = tokenRole();
+      return r == 'admin' || r == 'boss' || r == 'manager' || r == 'rh'
+        || r == 'Admin' || r == 'Boss' || r == 'Manager' || r == 'RH';
+    }
+
+    function normTeam(s) {
+      return s is string
+        ? s.replace('/', '_').replace(' ', '_')
+        : '';
+    }
+
+    function docTeamId() {
+      return resource.data.teamId is string ? normTeam(resource.data.teamId) : '';
+    }
+
+    function incomingTeamId() {
+      return request.resource.data.teamId is string
+        ? normTeam(request.resource.data.teamId)
+        : '';
+    }
+
+    function supervisorOwnsDoc() {
+      let t = normTeam(tokenTeamId());
+      let lk = normTeam(tokenLeaderKey());
+      let d = docTeamId();
+      return (t != '' && d == t) || (lk != '' && d == lk);
+    }
+
+    function supervisorCreatesOwnTeam() {
+      let t = normTeam(tokenTeamId());
+      let lk = normTeam(tokenLeaderKey());
+      let inc = incomingTeamId();
+      return tokenRole() == 'supervisor' && (inc == t || (lk != '' && inc == lk));
+    }
+
+    // Coleção daily_attendance — claims esperados: role, teamId, leaderKey (opcional).
+    match /daily_attendance/{docId} {
+      allow read: if isPrivileged() || (tokenRole() == 'supervisor' && supervisorOwnsDoc());
+
+      allow create: if isPrivileged() || supervisorCreatesOwnTeam();
+
+      allow update: if isPrivileged() || supervisorCreatesOwnTeam();
+
+      allow delete: if tokenRole() == 'admin' || tokenRole() == 'Admin';
+    }
+
+    // Outras coleções do New Time: mantenha alinhado ao seu deploy atual.
+    // Em desenvolvimento sem Auth no Firestore, substitua por política explícita.
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
