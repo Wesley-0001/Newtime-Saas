@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+.runtimeconfig.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Firebase (local/emulator, cache, debug)
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Build outputs (Node / bundlers — evita enviar artefactos gerados)
+dist/
+build/
+out/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Service account keys (Firebase Admin / GCP)
+**/serviceAccount*.json
+
+scripts/serviceAccountKey.json
