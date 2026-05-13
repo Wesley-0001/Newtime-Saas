@@ -971,10 +971,23 @@ body.dark-mode .sup-dash-alert-icon { color: var(--brand-secondary); }
   box-shadow: 0 4px 16px rgba(255, 190, 212, 0.65);
   filter: brightness(0.98);
 }
+.sup-dash-checklist-btn--amostras {
+  background: #8e44ad;
+  color: #fff;
+}
+.sup-dash-checklist-btn--amostras:hover {
+  background: #9b59b6;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(142, 68, 173, 0.45);
+  filter: brightness(1.04);
+}
 .sup-dash-checklist-btn:active {
   transform: none;
 }
 body.dark-mode .sup-dash-checklist-btn--impressao {
+  color: #fff;
+}
+body.dark-mode .sup-dash-checklist-btn--amostras {
   color: #fff;
 }
 

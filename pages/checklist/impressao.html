@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Check-in de turno — Impressão | New Time</title>
+  <link rel="icon" type="image/png" href="../../images/logo-black.png" />
+  <link rel="stylesheet" href="../../css/style.css" />
+  <link rel="stylesheet" href="../../css/checklist-checkin-success.css" />
+  <style>
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .impressao-app {
+      min-height: 100vh;
+      font-family: inherit;
+      background-color: #fff8fb;
+      background-image: radial-gradient(circle at 20% 50%, rgba(255, 190, 212, 0.35) 0%, transparent 60%),
+        radial-gradient(circle at 80% 20%, rgba(255, 190, 212, 0.22) 0%, transparent 50%);
+    }
+
+    .impressao-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      height: 56px;
+      padding: 0 28px;
+      background: #FFBED4;
+      border-bottom: 1px solid rgba(74, 48, 64, 0.12);
+      box-sizing: border-box;
+    }
+
+    .impressao-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 0 12px;
+      min-width: 0;
+      flex-wrap: wrap;
+      row-gap: 10px;
+    }
+
+    .impressao-topbar-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: rgba(61, 36, 48, 0.9);
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .impressao-topbar-pill {
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(74, 48, 64, 0.18);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4a3040;
+      letter-spacing: 0.02em;
+    }
+
+    .impressao-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    .impressao-layout {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 767px) {
+      .impressao-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .impressao-side {
+        order: 99;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .impressao-topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        gap: 10px 12px;
+        align-items: center;
+        height: auto;
+        min-height: 56px;
+        padding: 10px 16px;
+      }
+      .impressao-topbar-left {
+        display: contents;
+      }
+      .impressao-topbar-title {
+        grid-column: 1;
+        grid-row: 1;
+        min-width: 0;
+        white-space: normal;
+        line-height: 1.35;
+        overflow: visible;
+        text-overflow: clip;
+      }
+      .impressao-topbar-pill {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+      }
+      .impressao-app .checklist-hub-links {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+    }
+
+    .impressao-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    #form-impressao .impressao-step-panel[data-step='1'] {
+      order: 1;
+    }
+    #form-impressao .impressao-step-panel[data-step='3'] {
+      order: 2;
+    }
+    #form-impressao .impressao-step-panel[data-step='4'] {
+      order: 3;
+    }
+    #form-impressao .impressao-step-panel[data-step='5'] {
+      order: 4;
+    }
+    #form-impressao .impressao-step-panel[data-step='2'] {
+      order: 5;
+    }
+    #form-impressao .impressao-step-panel[data-step='6'] {
+      order: 99;
+    }
+
+    #form-impressao .impressao-step-panel {
+      display: block !important;
+    }
+
+    #form-impressao .impressao-step-panel[hidden] {
+      display: block !important;
+    }
+
+    .impressao-card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 190, 212, 0.08);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(255, 190, 212, 0.06);
+      overflow: hidden;
+      margin-bottom: 14px;
+      animation: slideUp 0.3s ease forwards;
+      opacity: 0;
+    }
+
+    #form-impressao .impressao-step-panel[data-step='1'] > .impressao-card {
+      animation-delay: 0.05s;
+    }
+    #form-impressao .impressao-step-panel[data-step='3'] > .impressao-card {
+      animation-delay: 0.1s;
+    }
+    #form-impressao .impressao-step-panel[data-step='4'] > .impressao-card {
+      animation-delay: 0.15s;
+    }
+    #form-impressao .impressao-step-panel[data-step='5'] > .impressao-card {
+      animation-delay: 0.2s;
+    }
+    #form-impressao .impressao-step-panel[data-step='2'] > .impressao-card {
+      animation-delay: 0.25s;
+    }
+
+    .impressao-card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background: #fafbfd;
+      border-bottom: 1px solid rgba(255, 190, 212, 0.06);
+    }
+
+    .impressao-card-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #bd4e7a;
+      opacity: 0.7;
+      margin: 0;
+    }
+
+    .impressao-card-body {
+      padding: 20px;
+    }
+
+    .impressao-label-up {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8b93a7;
+      margin-bottom: 6px;
+    }
+
+    .impressao-input {
+      width: 100%;
+      background: #f8f9fc;
+      border: 1.5px solid #e2e6f0;
+      border-radius: 9px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #1a2340;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .impressao-input:focus {
+      border-color: #bd4e7a;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(255, 190, 212, 0.08);
+      background: #fff;
+    }
+
+    .impressao-row-flex {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .impressao-field-grow {
+      flex: 1 1 200px;
+      min-width: 0;
+    }
+
+    .impressao-radio-grid-eq {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    @media (max-width: 520px) {
+      .impressao-radio-grid-eq {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .impressao-radio-tile {
+      position: relative;
+      display: block;
+      cursor: pointer;
+    }
+
+    .impressao-radio-tile input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .impressao-radio-tile span {
+      display: block;
+      background: #f4f7ff;
+      border: 1.5px solid #c5d0e8;
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .impressao-radio-tile span:hover {
+      border-color: #bd4e7a;
+      background: #ebf0ff;
+      color: #bd4e7a;
+    }
+
+    .impressao-radio-tile input:focus-visible + span {
+      outline: 2px solid #bd4e7a;
+      outline-offset: 2px;
+    }
+
+    .impressao-radio-tile input:checked + span {
+      background: #FFBED4;
+      border-color: #bd4e7a;
+      color: #3d2430;
+      box-shadow: 0 2px 8px rgba(189, 78, 122, 0.25);
+    }
+
+    .impressao-prod-input {
+      font-size: 36px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: -0.02em;
+      color: #bd4e7a;
+      background: #f4f7ff;
+      border: 2px solid #c5d0e8;
+      border-radius: 12px;
+      padding: 14px 20px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .impressao-prod-input:focus {
+      border-color: #bd4e7a;
+      box-shadow: 0 0 0 4px rgba(255, 190, 212, 0.1);
+      background: #fff;
+    }
+
+    .impressao-prod-input-sm {
+      font-size: 20px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: -0.02em;
+      color: #bd4e7a;
+      background: #f4f7ff;
+      border: 2px solid #c5d0e8;
+      border-radius: 12px;
+      padding: 12px 16px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .impressao-prod-input-sm:focus {
+      border-color: #bd4e7a;
+      box-shadow: 0 0 0 4px rgba(255, 190, 212, 0.1);
+      background: #fff;
+    }
+
+    .impressao-check-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid #f1f3f9;
+    }
+
+    .impressao-check-item:last-of-type {
+      border-bottom: none;
+    }
+
+    .impressao-check-text {
+      flex: 1;
+      font-size: 13px;
+      color: #2d3748;
+      line-height: 1.4;
+      min-width: 0;
+    }
+
+    .impressao-sn-group {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .impressao-sn {
+      background: #f4f7ff;
+      border: 1.5px solid #c5d0e8;
+      border-radius: 7px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #8b93a7;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .impressao-sn:not(.is-sim-active):not(.is-nao-active):hover {
+      border-color: #9ba8c0;
+      color: #4a5568;
+    }
+
+    .impressao-sn.is-sim-active {
+      background: #ebfbee;
+      border-color: #8ce99a;
+      color: #2b8a3e;
+      box-shadow: 0 1px 4px rgba(43, 138, 62, 0.15);
+    }
+
+    .impressao-sn.is-nao-active {
+      background: #fff5f5;
+      border-color: #ffa8a8;
+      color: #c92a2a;
+      box-shadow: 0 1px 4px rgba(201, 42, 42, 0.12);
+    }
+
+    .impressao-textarea {
+      width: 100%;
+      border: 1.5px solid #e2e6f0;
+      border-radius: 9px;
+      padding: 11px 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #1a2340;
+      background: #f8f9fc;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .impressao-textarea::placeholder {
+      color: #b0b8cc;
+    }
+
+    .impressao-textarea:focus {
+      border-color: #bd4e7a;
+      box-shadow: 0 0 0 3px rgba(255, 190, 212, 0.08);
+      background: #fff;
+      outline: none;
+    }
+
+    .impressao-two-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 640px) {
+      .impressao-two-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .impressao-conditional {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .impressao-conditional.is-visible {
+      display: block;
+    }
+
+    .impressao-alert {
+      display: none;
+      background: #fff5f5;
+      border: 1px solid #ffa8a8;
+      border-left: 3px solid #c92a2a;
+      border-radius: 0 9px 9px 0;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #c92a2a;
+      line-height: 1.45;
+      margin-bottom: 16px;
+    }
+
+    .impressao-alert.is-visible {
+      display: block;
+    }
+
+    .impressao-side {
+      position: static;
+      top: auto;
+    }
+
+    .impressao-side-card {
+      position: sticky;
+      top: 72px;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 190, 212, 0.08);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(255, 190, 212, 0.06);
+      padding: 20px;
+    }
+
+    .impressao-side-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #8b93a7;
+      margin: 0 0 16px;
+    }
+
+    .impressao-side-pct {
+      font-size: 36px;
+      font-weight: 800;
+      color: #bd4e7a;
+      margin: 0 0 4px;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .impressao-side-sub {
+      font-size: 12px;
+      color: #8b93a7;
+      margin: 0 0 0;
+    }
+
+    .impressao-side-track {
+      height: 5px;
+      border-radius: 3px;
+      background: #eef1f8;
+      overflow: hidden;
+      margin: 14px 0;
+    }
+
+    .impressao-side-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #FFBED4, #e8a0bc);
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .impressao-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 0;
+      border-bottom: 1px solid #f1f3f9;
+      font-size: 12px;
+      color: #4a5568;
+    }
+
+    .impressao-status-row:last-child {
+      border-bottom: none;
+    }
+
+    .impressao-status-lbl {
+      font-size: 12px;
+      color: #4a5568;
+    }
+
+    .impressao-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    .impressao-badge-ok {
+      background: #ebfbee;
+      color: #2b8a3e;
+    }
+
+    .impressao-badge-pend {
+      background: #fff4e6;
+      color: #e67700;
+    }
+
+    .impressao-badge-empty {
+      background: #f1f3f9;
+      color: #8b93a7;
+    }
+
+    .impressao-submit-main {
+      width: 100%;
+      margin-top: 16px;
+      background: #bd4e7a;
+      color: #fff;
+      border: none;
+      border-radius: 11px;
+      padding: 15px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    }
+
+    .impressao-submit-main:hover:not(:disabled) {
+      background: #a33d66;
+      box-shadow: 0 4px 16px rgba(255, 190, 212, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .impressao-submit-main:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .impressao-submit-main:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+    }
+
+    .impressao-submit-hint {
+      margin: 8px 0 0;
+      font-size: 11px;
+      color: #b0b8cc;
+      text-align: center;
+    }
+
+    .impressao-success.impressao-card {
+      animation: none;
+      opacity: 1;
+      margin-bottom: 0;
+    }
+
+    .impressao-success {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+      max-width: 520px;
+      margin: 24px auto 0;
+    }
+
+    .impressao-success.is-visible {
+      display: block;
+    }
+
+    .impressao-success-ico {
+      font-size: 48px;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .impressao-success h3 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #bd4e7a;
+      margin: 0 0 8px;
+    }
+
+    .impressao-success p {
+      margin: 0;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .impressao-visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    .impressao-js-nav {
+      position: fixed;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+      pointer-events: none;
+    }
+
+    .impressao-js-nav button {
+      pointer-events: none !important;
+    }
+
+    .impressao-check-table-hidden {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+
+    .impressao-step-review {
+      display: none !important;
+    }
+
+    .impressao-hint-11 {
+      font-size: 12px;
+      color: #8b93a7;
+      text-align: center;
+      letter-spacing: 0.01em;
+      margin: 8px 0 0;
+    }
+
+    .impressao-hint-11-left {
+      font-size: 11px;
+      color: #8b93a7;
+      margin: 0 0 8px;
+      line-height: 1.4;
+    }
+
+    .impressao-hint {
+      font-size: 13px;
+      color: #8b93a7;
+      text-align: center;
+      margin: 0;
+    }
+
+    .impressao-q {
+      font-size: 13px;
+      color: #2d3748;
+      margin: 0 0 10px;
+    }
+  </style>
+</head>
+<body data-nt-firebase-lite="1" class="impressao-app">
+  <header class="impressao-topbar">
+    <div class="impressao-topbar-left">
+      <span class="impressao-topbar-title">Check-in de turno — Impressão</span>
+      <nav class="checklist-hub-links" aria-label="Trocar checklist de setor">
+        <a class="checklist-hub-btn" href="calandra.html">Calandra</a>
+        <span class="checklist-hub-btn is-current" aria-current="page">Impressão</span>
+        <a class="checklist-hub-btn" href="amostras.html">Amostras</a>
+      </nav>
+    </div>
+    <div class="impressao-topbar-pill" id="topbar-progress-text" aria-live="polite">0% concluído</div>
+  </header>
+
+  <div class="impressao-shell">
+    <div class="impressao-layout">
+      <div class="impressao-main">
+        <form id="form-impressao" novalidate>
+          <div class="impressao-alert" id="step-alert" role="alert"></div>
+
+          <section class="impressao-step-panel is-active" data-step="1" aria-labelledby="titulo-e1">
+            <div class="impressao-card">
+              <div class="impressao-card-head">
+                <p class="impressao-card-kicker" id="titulo-e1">Identificação do turno</p>
+              </div>
+              <div class="impressao-card-body">
+                <div class="impressao-row-flex">
+                  <div class="impressao-field-grow">
+                    <label class="impressao-label-up" for="data_inicio_turno">Data de início do turno *</label>
+                    <input class="impressao-input" type="date" id="data_inicio_turno" name="data_inicio_turno" />
+                  </div>
+                  <div class="impressao-field-grow" style="flex:2 1 280px">
+                    <span class="impressao-label-up">Equipe *</span>
+                    <div class="impressao-radio-grid-eq" id="equipe-group">
+                      <label class="impressao-radio-tile"><input type="radio" name="equipe" value="EQ1" /><span>EQ1</span></label>
+                      <label class="impressao-radio-tile"><input type="radio" name="equipe" value="EQ2" /><span>EQ2</span></label>
+                      <label class="impressao-radio-tile"><input type="radio" name="equipe" value="EQ3" /><span>EQ3</span></label>
+                      <label class="impressao-radio-tile"><input type="radio" name="equipe" value="EQ4" /><span>EQ4</span></label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="impressao-step-panel" data-step="2" hidden aria-labelledby="titulo-e2">
+            <div class="impressao-card">
+              <div class="impressao-card-head">
+                <p class="impressao-card-kicker" id="titulo-e2">Relatório</p>
+              </div>
+              <div class="impressao-card-body">
+                <label class="impressao-visually-hidden" for="relatorio">Relatório do turno (opcional)</label>
+                <textarea class="impressao-textarea" id="relatorio" name="relatorio" rows="5" placeholder="Relatório do turno (opcional)"></textarea>
+              </div>
+            </div>
+          </section>
+
+          <section class="impressao-step-panel" data-step="3" hidden aria-labelledby="titulo-e3">
+            <div class="impressao-card">
+              <div class="impressao-card-head">
+                <p class="impressao-card-kicker" id="titulo-e3">Produção no turno</p>
+              </div>
+              <div class="impressao-card-body">
+                <label class="impressao-visually-hidden" for="producao_rolos">Produção em rolos</label>
+                <input
+                  class="impressao-prod-input"
+                  type="number"
+                  id="producao_rolos"
+                  name="producao_rolos"
+                  min="0"
+                  step="1"
+                  inputmode="numeric"
+                  placeholder="0"
+                />
+                <p class="impressao-hint-11">rolos produzidos no turno</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="impressao-step-panel" data-step="4" hidden aria-labelledby="titulo-e4">
+            <div class="impressao-card">
+              <div class="impressao-card-head">
+                <p class="impressao-card-kicker" id="titulo-e4">Check list de operação</p>
+              </div>
+              <div class="impressao-card-body">
+                <div id="checklist-ui" aria-label="Check list de operação"></div>
+                <div class="impressao-check-table-hidden" aria-hidden="true">
+                  <table>
+                    <tbody id="checklist-tbody"></tbody>
+                  </table>
+                </div>
+                <div style="margin-top:14px">
+                  <label class="impressao-visually-hidden" for="observacoes">Observações</label>
+                  <textarea class="impressao-textarea" id="observacoes" name="observacoes" rows="3" placeholder="Observações (opcional)"></textarea>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="impressao-step-panel" data-step="5" hidden aria-labelledby="titulo-e5">
+            <div class="impressao-card">
+              <div class="impressao-card-head">
+                <p class="impressao-card-kicker" id="titulo-e5">Pedidos a revisar</p>
+              </div>
+              <div class="impressao-card-body">
+                <p class="impressao-q">Tem pedido a ser revisado?</p>
+                <div class="impressao-sn-group" role="group" aria-label="Pedido a revisar">
+                  <button type="button" class="impressao-sn" data-pedido-bind="sim" id="pedido-sim-btn">Sim</button>
+                  <button type="button" class="impressao-sn" data-pedido-bind="nao" id="pedido-nao-btn">Não</button>
+                </div>
+                <div class="impressao-visually-hidden">
+                  <label><input type="radio" name="pedido_revisar" value="sim" id="pedido_sim" /> Sim</label>
+                  <label><input type="radio" name="pedido_revisar" value="nao" id="pedido_nao" /> Não</label>
+                </div>
+                <div class="impressao-conditional" id="pedido-qty-wrap">
+                  <label class="impressao-label-up" for="pedido_qtd_rolos" style="margin-top:4px">Quantidade (rolos)</label>
+                  <input
+                    class="impressao-prod-input-sm"
+                    type="number"
+                    id="pedido_qtd_rolos"
+                    name="pedido_qtd_rolos"
+                    min="1"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="impressao-step-panel impressao-step-review" data-step="6" hidden aria-labelledby="titulo-e6">
+            <div class="impressao-card" id="review-card">
+              <p class="impressao-card-kicker" id="titulo-e6">Revisão</p>
+              <div class="impressao-card-body">
+                <dl class="impressao-summary" id="review-summary"></dl>
+              </div>
+            </div>
+          </section>
+
+          <div class="impressao-visually-hidden" aria-hidden="true">
+            <span id="step-indicator">Etapa 1 de 6</span>
+            <div style="height:4px;background:#eee;width:120px"><div id="progress-fill" style="height:100%;width:16.666%;background:#bd4e7a"></div></div>
+          </div>
+
+          <div class="impressao-js-nav" aria-hidden="true">
+            <button type="button" id="btn-back" tabindex="-1">Voltar</button>
+            <button type="button" id="btn-next" tabindex="-1">Avançar</button>
+            <button type="submit" id="btn-submit" tabindex="-1">Enviar</button>
+          </div>
+        </form>
+      </div>
+
+      <aside class="impressao-side">
+        <div class="impressao-side-card">
+          <p class="impressao-side-title">Status</p>
+          <div class="impressao-side-track" aria-hidden="true">
+            <div class="impressao-side-fill" id="side-progress-bar"></div>
+          </div>
+          <p class="impressao-side-pct" id="side-pct">0%</p>
+          <p class="impressao-side-sub" id="side-pct-label">0 de 0 campos concluídos</p>
+
+          <div class="impressao-status-row">
+            <span class="impressao-status-lbl">Identificação</span>
+            <span class="impressao-badge impressao-badge-empty" id="badge-identificacao">—</span>
+          </div>
+          <div class="impressao-status-row">
+            <span class="impressao-status-lbl">Produção</span>
+            <span class="impressao-badge impressao-badge-empty" id="badge-producao">—</span>
+          </div>
+          <div class="impressao-status-row">
+            <span class="impressao-status-lbl">Check list</span>
+            <span class="impressao-badge impressao-badge-empty" id="badge-checklist">—</span>
+          </div>
+          <div class="impressao-status-row">
+            <span class="impressao-status-lbl">Pedidos</span>
+            <span class="impressao-badge impressao-badge-empty" id="badge-pedidos">—</span>
+          </div>
+          <div class="impressao-status-row">
+            <span class="impressao-status-lbl">Relatório</span>
+            <span class="impressao-badge impressao-badge-empty" id="badge-relatorio">—</span>
+          </div>
+
+          <button type="submit" class="impressao-submit-main" id="btn-submit-main" form="form-impressao">Enviar check-in →</button>
+          <p class="impressao-submit-hint" id="submit-hint">Preencha todos os campos obrigatórios</p>
+        </div>
+      </aside>
+    </div>
+
+    <div class="impressao-card impressao-success" id="success-panel" aria-live="polite">
+      <div class="impressao-success-ico" aria-hidden="true">✅</div>
+      <h3>Check-in enviado com sucesso!</h3>
+      <p>Redirecionando para o painel...</p>
+    </div>
+  </div>
+
+  <script type="module" src="../../js/checklist/impressao.js"></script>
+  <script>
+    (function () {
+      var CHECKLIST_LABELS = [
+        'PVs conferidas',
+        'Setor organizado e limpo',
+        'Produção parada',
+        'Houve problema na Impressão?',
+        'Houve problema no tecido ou largura?',
+        'Houve problemas na Revisadeira?',
+        'Os retalhos estão organizados?',
+        'O papel queimado está armazenado no local correto?'
+      ];
+
+      function parseIntSafe(v) {
+        var n = parseInt(String(v).trim(), 10);
+        return Number.isFinite(n) ? n : NaN;
+      }
+
+      function wireChecklistUi() {
+        var host = document.getElementById('checklist-ui');
+        var tbody = document.getElementById('checklist-tbody');
+        if (!host || !tbody) return;
+
+        host.innerHTML = '';
+        var rows = tbody.querySelectorAll('tr');
+        rows.forEach(function (tr, idx) {
+          var label = CHECKLIST_LABELS[idx] || '';
+          var simIn = tr.querySelector('input[value="sim"]');
+          var naoIn = tr.querySelector('input[value="nao"]');
+          if (!simIn || !naoIn) return;
+
+          var row = document.createElement('div');
+          row.className = 'impressao-check-item';
+          row.setAttribute('data-check-idx', String(idx + 1));
+
+          var txt = document.createElement('div');
+          txt.className = 'impressao-check-text';
+          txt.textContent = label;
+
+          var grp = document.createElement('div');
+          grp.className = 'impressao-sn-group';
+
+          var bSim = document.createElement('button');
+          bSim.type = 'button';
+          bSim.className = 'impressao-sn';
+          bSim.textContent = 'Sim';
+          bSim.addEventListener('click', function () {
+            simIn.checked = true;
+            simIn.dispatchEvent(new Event('input', { bubbles: true }));
+            simIn.dispatchEvent(new Event('change', { bubbles: true }));
+            syncRow();
+          });
+
+          var bNao = document.createElement('button');
+          bNao.type = 'button';
+          bNao.className = 'impressao-sn';
+          bNao.textContent = 'Não';
+          bNao.addEventListener('click', function () {
+            naoIn.checked = true;
+            naoIn.dispatchEvent(new Event('input', { bubbles: true }));
+            naoIn.dispatchEvent(new Event('change', { bubbles: true }));
+            syncRow();
+          });
+
+          function syncRow() {
+            bSim.classList.toggle('is-sim-active', !!simIn.checked);
+            bSim.classList.toggle('is-nao-active', false);
+            bNao.classList.toggle('is-nao-active', !!naoIn.checked);
+            bNao.classList.toggle('is-sim-active', false);
+          }
+
+          tr.addEventListener('change', syncRow);
+          simIn.addEventListener('change', syncRow);
+          naoIn.addEventListener('change', syncRow);
+          syncRow();
+
+          grp.appendChild(bSim);
+          grp.appendChild(bNao);
+          row.appendChild(txt);
+          row.appendChild(grp);
+          host.appendChild(row);
+        });
+      }
+
+      function wirePedidoButtons() {
+        var sim = document.getElementById('pedido_sim');
+        var nao = document.getElementById('pedido_nao');
+        var bSim = document.getElementById('pedido-sim-btn');
+        var bNao = document.getElementById('pedido-nao-btn');
+        if (!sim || !nao || !bSim || !bNao) return;
+
+        function syncPedidoUi() {
+          bSim.classList.toggle('is-sim-active', !!sim.checked);
+          bSim.classList.remove('is-nao-active');
+          bNao.classList.toggle('is-nao-active', !!nao.checked);
+          bNao.classList.remove('is-sim-active');
+        }
+
+        bSim.addEventListener('click', function () {
+          sim.checked = true;
+          sim.dispatchEvent(new Event('change', { bubbles: true }));
+          syncPedidoUi();
+        });
+        bNao.addEventListener('click', function () {
+          nao.checked = true;
+          nao.dispatchEvent(new Event('change', { bubbles: true }));
+          syncPedidoUi();
+        });
+        var formEl = document.getElementById('form-impressao');
+        if (formEl) {
+          formEl.addEventListener('change', function (e) {
+            if (e.target && e.target.name === 'pedido_revisar') syncPedidoUi();
+          });
+        }
+        syncPedidoUi();
+      }
+
+      function sectionIdentificacao(form) {
+        var d = form.querySelector('#data_inicio_turno');
+        var eq = form.querySelector('input[name="equipe"]:checked');
+        return !!(d && d.value && eq);
+      }
+
+      function sectionProducao(form) {
+        var el = form.querySelector('#producao_rolos');
+        if (!el) return false;
+        var n = parseIntSafe(el.value);
+        return Number.isFinite(n) && n > 0;
+      }
+
+      function sectionChecklist(form, n) {
+        var c = 0;
+        for (var i = 1; i <= n; i++) {
+          if (form.querySelector('input[name="checklist_' + i + '"]:checked')) c++;
+        }
+        return { done: c, total: n, ok: c === n };
+      }
+
+      function sectionPedidos(form) {
+        var pr = form.querySelector('input[name="pedido_revisar"]:checked');
+        if (!pr) return { ok: false, detail: '—' };
+        if (pr.value === 'sim') {
+          var q = form.querySelector('#pedido_qtd_rolos');
+          var n = q ? parseIntSafe(q.value) : NaN;
+          var ok = Number.isFinite(n) && n >= 1;
+          return { ok: ok, detail: ok ? '✓ ok' : '0/1' };
+        }
+        return { ok: true, detail: '✓ ok' };
+      }
+
+      function optionalFilled(form, sel) {
+        var el = form.querySelector(sel);
+        return !!(el && String(el.value || '').trim());
+      }
+
+      function setBadge(el, mode, text) {
+        if (!el) return;
+        el.textContent = text;
+        el.classList.remove('impressao-badge-ok', 'impressao-badge-pend', 'impressao-badge-empty');
+        if (mode === 'ok') el.classList.add('impressao-badge-ok');
+        else if (mode === 'pend') el.classList.add('impressao-badge-pend');
+        else el.classList.add('impressao-badge-empty');
+      }
+
+      function updateProgress() {
+        var form = document.getElementById('form-impressao');
+        if (!form) return;
+
+        var nCheck = 8;
+        var idOk = sectionIdentificacao(form);
+        var prodOk = sectionProducao(form);
+        var chk = sectionChecklist(form, nCheck);
+        var ped = sectionPedidos(form);
+        var relOk = optionalFilled(form, '#relatorio');
+
+        var chkFrac = chk.done / nCheck;
+        var numer =
+          (idOk ? 1 : 0) +
+          (prodOk ? 1 : 0) +
+          chkFrac +
+          (ped.ok ? 1 : 0) +
+          (relOk ? 1 : 0);
+        var denom = 5;
+        var pct = denom ? Math.min(100, Math.round((100 * numer) / denom)) : 0;
+        var top = document.getElementById('topbar-progress-text');
+        if (top) top.textContent = pct + '% concluído';
+        var bar = document.getElementById('side-progress-bar');
+        if (bar) bar.style.width = pct + '%';
+        var sp = document.getElementById('side-pct');
+        if (sp) sp.textContent = pct + '%';
+        var sl = document.getElementById('side-pct-label');
+        if (sl) {
+          var doneRounded = Math.round(numer * 10) / 10;
+          sl.textContent = doneRounded + ' de ' + denom + ' campos concluídos';
+        }
+
+        setBadge(
+          document.getElementById('badge-identificacao'),
+          idOk ? 'ok' : 'empty',
+          idOk ? '✓ ok' : '—'
+        );
+        setBadge(
+          document.getElementById('badge-producao'),
+          prodOk ? 'ok' : 'empty',
+          prodOk ? '✓ ok' : '—'
+        );
+        setBadge(
+          document.getElementById('badge-checklist'),
+          chk.ok ? 'ok' : chk.done ? 'pend' : 'empty',
+          chk.ok ? '✓ ok' : chk.done ? chk.done + '/' + chk.total : '—'
+        );
+        var pedSel = form.querySelector('input[name="pedido_revisar"]:checked');
+        setBadge(
+          document.getElementById('badge-pedidos'),
+          ped.ok ? 'ok' : pedSel ? 'pend' : 'empty',
+          ped.ok ? '✓ ok' : pedSel ? ped.detail : '—'
+        );
+        setBadge(
+          document.getElementById('badge-relatorio'),
+          relOk ? 'ok' : 'empty',
+          relOk ? '✓ ok' : '—'
+        );
+      }
+
+      function bindForm() {
+        var form = document.getElementById('form-impressao');
+        if (!form) return;
+        form.addEventListener('input', updateProgress);
+        form.addEventListener('change', updateProgress);
+        updateProgress();
+      }
+
+      function mirrorSubmitState() {
+        var hidden = document.getElementById('btn-submit');
+        var main = document.getElementById('btn-submit-main');
+        if (!hidden || !main) return;
+        function syncMainFromHidden() {
+          main.disabled = hidden.disabled;
+          var t = (hidden.textContent || '').trim();
+          if (t.indexOf('Enviando') !== -1) main.textContent = 'Enviando...';
+          else main.textContent = 'Enviar check-in →';
+        }
+        var obs = new MutationObserver(syncMainFromHidden);
+        obs.observe(hidden, { attributes: true, attributeFilter: ['disabled', 'hidden'], childList: true, subtree: true, characterData: true });
+        var formEl = document.getElementById('form-impressao');
+        if (formEl) {
+          formEl.addEventListener(
+            'submit',
+            function () {
+              requestAnimationFrame(syncMainFromHidden);
+            },
+            true
+          );
+        }
+        syncMainFromHidden();
+      }
+
+      /** impressao.js esconde o submit fora da etapa 6; forçamos fluxo de página única. */
+      var impressaoSinglePageFixWired = false;
+      function wireImpressaoSinglePageFix() {
+        if (impressaoSinglePageFixWired) return;
+        impressaoSinglePageFixWired = true;
+        var submit = document.getElementById('btn-submit');
+        var next = document.getElementById('btn-next');
+        var back = document.getElementById('btn-back');
+        function clamp() {
+          if (submit) submit.hidden = false;
+          if (next) next.hidden = true;
+          if (back) {
+            back.hidden = true;
+            back.style.visibility = 'hidden';
+          }
+        }
+        clamp();
+        if (submit) {
+          var mo = new MutationObserver(clamp);
+          mo.observe(submit, { attributes: true, attributeFilter: ['hidden'] });
+        }
+        if (next) {
+          var moN = new MutationObserver(clamp);
+          moN.observe(next, { attributes: true, attributeFilter: ['hidden'] });
+        }
+        if (back) {
+          var moB = new MutationObserver(clamp);
+          moB.observe(back, { attributes: true, attributeFilter: ['style', 'hidden'] });
+        }
+      }
+
+      function start() {
+        wireImpressaoSinglePageFix();
+        wireChecklistUi();
+        wirePedidoButtons();
+        bindForm();
+        mirrorSubmitState();
+        updateProgress();
+      }
+
+      function boot() {
+        var tbody = document.getElementById('checklist-tbody');
+        if (!tbody || tbody.querySelectorAll('tr').length < 8) {
+          if (typeof boot._n === 'undefined') boot._n = 0;
+          boot._n += 1;
+          if (boot._n < 250) setTimeout(boot, 30);
+          return;
+        }
+        start();
+      }
+
+      window.addEventListener('load', function () {
+        wireImpressaoSinglePageFix();
+        setTimeout(boot, 0);
+      });
+    })();
+  </script>
+</body>
+</html>

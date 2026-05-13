@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matriz — Check List Calandra | New Time</title>
+  <link rel="icon" type="image/png" href="../../images/logo-black.png" />
+  <link rel="stylesheet" href="../../css/style.css" />
+  <style>
+    .matriz-page {
+      min-height: 100vh;
+      margin: 0;
+      font-family: inherit;
+      background: var(--bg-app);
+      color: var(--text-primary);
+    }
+
+    .matriz-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: 56px;
+      padding: 0 24px;
+      background: #002b5b;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      box-sizing: border-box;
+    }
+
+    .matriz-header img {
+      display: block;
+      height: 36px;
+      width: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .matriz-header h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .matriz-main {
+      max-width: 100%;
+      padding: 20px 24px 32px;
+      box-sizing: border-box;
+    }
+
+    .matriz-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .matriz-toolbar input[type="search"],
+    .matriz-toolbar select {
+      font-size: 13px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--input-text);
+      min-height: 40px;
+      box-sizing: border-box;
+    }
+
+    .matriz-toolbar input[type="search"] {
+      flex: 1 1 200px;
+      min-width: 160px;
+      max-width: 360px;
+    }
+
+    .matriz-toolbar select {
+      min-width: 160px;
+    }
+
+    .matriz-btn {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      background: var(--brand-primary);
+      color: #fff;
+      min-height: 40px;
+      box-sizing: border-box;
+    }
+
+    .matriz-btn:hover {
+      filter: brightness(1.08);
+    }
+
+    .matriz-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--card-bg);
+    }
+
+    .matriz-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .matriz-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #002b5b;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: left;
+      padding: 10px 12px;
+      white-space: nowrap;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .matriz-table tbody td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      max-width: 220px;
+    }
+
+    .matriz-table tbody tr:nth-child(odd) {
+      background: var(--card-bg);
+    }
+
+    .matriz-table tbody tr:nth-child(even) {
+      background: var(--bg-surface-2);
+    }
+
+    .matriz-table tbody tr:hover {
+      background: var(--bg-hover);
+    }
+
+    .matriz-cell-muted {
+      color: var(--text-muted);
+    }
+
+    .matriz-badge-sim {
+      display: inline-block;
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .matriz-badge-nao {
+      display: inline-block;
+      background: var(--bg-surface-3);
+      color: var(--text-secondary);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .matriz-pagination {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .matriz-pagination .matriz-page-btn {
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      background: var(--brand-primary);
+      color: #fff;
+    }
+
+    .matriz-pagination .matriz-page-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: var(--bg-surface-3);
+      color: var(--text-secondary);
+      border-color: var(--border);
+    }
+
+    .matriz-pagination-info {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .matriz-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      gap: 16px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .matriz-loading[hidden] {
+      display: none !important;
+    }
+
+    .matriz-spinner {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 3px solid var(--border);
+      border-top-color: var(--brand-primary);
+      animation: matriz-spin 0.75s linear infinite;
+    }
+
+    @keyframes matriz-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .matriz-empty {
+      text-align: center;
+      padding: 48px 20px;
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .matriz-empty[hidden] {
+      display: none !important;
+    }
+
+    .matriz-panel[hidden] {
+      display: none !important;
+    }
+  </style>
+</head>
+<body data-nt-firebase-lite="1" class="matriz-page">
+  <header class="matriz-header">
+    <img src="../../images/logo-branco1.png" alt="New Time" width="120" height="36" />
+    <h1>Matriz — Check List Calandra</h1>
+  </header>
+
+  <main class="matriz-main">
+    <div id="matriz-loading" class="matriz-loading" aria-live="polite">
+      <div class="matriz-spinner" aria-hidden="true"></div>
+      <span>Carregando…</span>
+    </div>
+
+    <div id="matriz-denied" class="matriz-empty" hidden>
+      <p><strong>Não foi possível carregar a matriz.</strong></p>
+      <p>Esta aba não tinha sessão de administrador (comum ao abrir em <em>nova aba</em>). Use o botão no app que abre esta página, ou <a href="../../app.html">entre no sistema</a> como administrador e tente de novo.</p>
+    </div>
+
+    <div id="matriz-panel" class="matriz-panel" hidden>
+      <div class="matriz-toolbar">
+        <input
+          type="search"
+          id="matriz-search"
+          placeholder="Buscar por equipe ou data..."
+          autocomplete="off"
+        />
+        <select id="matriz-team" aria-label="Filtrar por equipe">
+          <option value="">Todas as equipes</option>
+          <option value="EQ1">EQ1</option>
+          <option value="EQ2">EQ2</option>
+          <option value="EQ3">EQ3</option>
+          <option value="EQ4">EQ4</option>
+        </select>
+        <button type="button" class="matriz-btn" id="matriz-export">⬇ Exportar CSV</button>
+      </div>
+
+      <div id="matriz-empty" class="matriz-empty" hidden>Nenhum check list encontrado.</div>
+
+      <div class="matriz-table-wrap" id="matriz-table-wrap" hidden>
+        <table class="matriz-table">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Equipe</th>
+              <th>Produção (rolos)</th>
+              <th>PVs conf.</th>
+              <th>Setor org.</th>
+              <th>Prod. parada</th>
+              <th>Prob. Calandra</th>
+              <th>Prob. Tecido</th>
+              <th>Prob. Revisadeira</th>
+              <th>Retalhos org.</th>
+              <th>Papel ok</th>
+              <th>Tem pedido</th>
+              <th>Qtd pedido</th>
+              <th>Faltas</th>
+              <th>Observações</th>
+              <th>Enviado em</th>
+            </tr>
+          </thead>
+          <tbody id="matriz-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="matriz-pagination" id="matriz-pagination" hidden>
+        <button type="button" class="matriz-page-btn" id="matriz-prev">← Anterior</button>
+        <span class="matriz-pagination-info" id="matriz-page-info"></span>
+        <button type="button" class="matriz-page-btn" id="matriz-next">Próximo →</button>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    /**
+     * Nova aba (window.open) não herda sessionStorage. Copia cp_user da aba que abriu esta página.
+     */
+    try {
+      if (!sessionStorage.getItem('cp_user')) {
+        const op = window.opener;
+        if (op) {
+          try {
+            const cp = op.sessionStorage.getItem('cp_user');
+            if (cp) sessionStorage.setItem('cp_user', cp);
+          } catch (_) {
+            /* opener de outra origem — não acessível */
+          }
+        }
+      }
+    } catch (_) {
+      /* ignore */
+    }
+
+    import { requireAdmin } from '../../js/auth/admin-guard.js';
+
+    let matrizAllowed = false;
+    try {
+      requireAdmin();
+      matrizAllowed = true;
+    } catch (e) {
+      if (!e || e.message !== 'NOT_ADMIN') throw e;
+    }
+
+    if (!matrizAllowed) {
+      const spin = document.getElementById('matriz-loading');
+      if (spin) spin.hidden = true;
+      const denied = document.getElementById('matriz-denied');
+      if (denied) denied.hidden = false;
+    } else {
+    const [{ db }, firestore] = await Promise.all([
+      import('../../js/firebase-db.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js')
+    ]);
+    const { collection, getDocs, orderBy, query } = firestore;
+
+    const COL = 'checklist_calandra';
+    const PER_PAGE = 25;
+
+    const elLoading = document.getElementById('matriz-loading');
+    const elPanel = document.getElementById('matriz-panel');
+    const elEmpty = document.getElementById('matriz-empty');
+    const elWrap = document.getElementById('matriz-table-wrap');
+    const elTbody = document.getElementById('matriz-tbody');
+    const elSearch = document.getElementById('matriz-search');
+    const elTeam = document.getElementById('matriz-team');
+    const elExport = document.getElementById('matriz-export');
+    const elPag = document.getElementById('matriz-pagination');
+    const elPrev = document.getElementById('matriz-prev');
+    const elNext = document.getElementById('matriz-next');
+    const elPageInfo = document.getElementById('matriz-page-info');
+
+    /** @type {Array<{ id: string } & Record<string, unknown>>} */
+    let allRows = [];
+    /** @type {Array<{ id: string } & Record<string, unknown>>} */
+    let filtered = [];
+    let page = 1;
+
+    function norm(s) {
+      return String(s == null ? '' : s)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function fmtCriadoEm(ts) {
+      if (!ts) return '—';
+      try {
+        let d = null;
+        if (typeof ts.toDate === 'function') d = ts.toDate();
+        else if (ts.seconds != null) d = new Date(ts.seconds * 1000);
+        else if (typeof ts === 'number') d = new Date(ts);
+        if (!d || Number.isNaN(d.getTime())) return '—';
+        return d.toLocaleString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      } catch {
+        return '—';
+      }
+    }
+
+    function cellChecklist(val) {
+      const v = String(val == null ? '' : val).trim();
+      if (v === 'Sim') return '<span class="matriz-badge-sim">Sim</span>';
+      if (v === 'Não') return '<span class="matriz-badge-nao">Não</span>';
+      return '<span class="matriz-cell-muted">—</span>';
+    }
+
+    function cellText(val) {
+      const s = String(val == null ? '' : val).trim();
+      if (!s) return '<span class="matriz-cell-muted">—</span>';
+      return escapeHtml(s);
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function rowFromDoc(id, data) {
+      const c = data.checklist && typeof data.checklist === 'object' ? data.checklist : {};
+      return {
+        id,
+        dataEntrada: data.dataEntrada,
+        equipe: data.equipe,
+        producaoQtd: data.producaoQtd,
+        pvs: c.pvs_conferidas,
+        setor: c.setor_organizado_limpo,
+        parada: c.producao_parada,
+        probCal: c.problema_calandra,
+        probTec: c.problema_tecido_ou_largura,
+        probRev: c.problema_revisadeira,
+        retalhos: c.retalhos_organizados,
+        papel: c.papel_queimado_local_correto,
+        temPedido: data.temPedido,
+        pedidoQtd: data.pedidoQtd,
+        faltas: data.faltas,
+        obs: data.checklistObservacoes,
+        criadoEm: data.criadoEm,
+        _raw: data
+      };
+    }
+
+    function applyFilters() {
+      const q = norm(elSearch.value);
+      const team = String(elTeam.value || '').trim();
+      filtered = allRows.filter((r) => {
+        if (team && String(r.equipe || '').trim() !== team) return false;
+        if (!q) return true;
+        const parts = [r.dataEntrada, r.equipe, fmtCriadoEm(r.criadoEm)].map(norm);
+        return parts.some((p) => p.includes(q));
+      });
+      page = 1;
+      render();
+    }
+
+    function render() {
+      const total = filtered.length;
+      const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+      if (page > pages) page = pages;
+
+      elTbody.innerHTML = '';
+
+      if (total === 0) {
+        elEmpty.hidden = false;
+        elWrap.hidden = true;
+        elPag.hidden = true;
+        return;
+      }
+
+      elEmpty.hidden = true;
+      elWrap.hidden = false;
+      elPag.hidden = false;
+
+      const start = (page - 1) * PER_PAGE;
+      const slice = filtered.slice(start, start + PER_PAGE);
+
+      for (const r of slice) {
+        const tr = document.createElement('tr');
+        const pedidoQtdStr =
+          r.pedidoQtd != null && r.pedidoQtd !== '' && Number.isFinite(Number(r.pedidoQtd))
+            ? String(r.pedidoQtd)
+            : '';
+        const enviado = fmtCriadoEm(r.criadoEm);
+        const enviadoCell =
+          enviado === '—'
+            ? '<span class="matriz-cell-muted">—</span>'
+            : cellText(enviado);
+        tr.innerHTML =
+          `<td>${cellText(r.dataEntrada)}</td>` +
+          `<td>${cellText(r.equipe)}</td>` +
+          `<td>${cellText(r.producaoQtd != null ? r.producaoQtd : '')}</td>` +
+          `<td>${cellChecklist(r.pvs)}</td>` +
+          `<td>${cellChecklist(r.setor)}</td>` +
+          `<td>${cellChecklist(r.parada)}</td>` +
+          `<td>${cellChecklist(r.probCal)}</td>` +
+          `<td>${cellChecklist(r.probTec)}</td>` +
+          `<td>${cellChecklist(r.probRev)}</td>` +
+          `<td>${cellChecklist(r.retalhos)}</td>` +
+          `<td>${cellChecklist(r.papel)}</td>` +
+          `<td>${cellChecklist(r.temPedido)}</td>` +
+          `<td>${pedidoQtdStr ? escapeHtml(pedidoQtdStr) : '<span class="matriz-cell-muted">—</span>'}</td>` +
+          `<td>${cellText(r.faltas)}</td>` +
+          `<td>${cellText(r.obs)}</td>` +
+          `<td>${enviadoCell}</td>`;
+        elTbody.appendChild(tr);
+      }
+
+      elPrev.disabled = page <= 1;
+      elNext.disabled = page >= pages;
+      elPageInfo.textContent = `Página ${page} de ${pages}  (${total} registro${total === 1 ? '' : 's'})`;
+    }
+
+    function escapeCsv(v) {
+      const str = String(v == null ? '' : v);
+      if (/[",\n\r]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+      return str;
+    }
+
+    function rowToCsvLine(r) {
+      const pedidoQtdStr =
+        r.pedidoQtd != null && r.pedidoQtd !== '' && Number.isFinite(Number(r.pedidoQtd))
+          ? String(r.pedidoQtd)
+          : '';
+      const cols = [
+        r.dataEntrada,
+        r.equipe,
+        r.producaoQtd != null ? r.producaoQtd : '',
+        r.pvs,
+        r.setor,
+        r.parada,
+        r.probCal,
+        r.probTec,
+        r.probRev,
+        r.retalhos,
+        r.papel,
+        r.temPedido,
+        pedidoQtdStr,
+        r.faltas,
+        r.obs,
+        fmtCriadoEm(r.criadoEm)
+      ];
+      return cols.map(escapeCsv).join(',');
+    }
+
+    function exportCsv() {
+      const headers = [
+        'Data',
+        'Equipe',
+        'Produção (rolos)',
+        'PVs conf.',
+        'Setor org.',
+        'Prod. parada',
+        'Prob. Calandra',
+        'Prob. Tecido',
+        'Prob. Revisadeira',
+        'Retalhos org.',
+        'Papel ok',
+        'Tem pedido',
+        'Qtd pedido',
+        'Faltas',
+        'Observações',
+        'Enviado em'
+      ];
+      const lines = [headers.map(escapeCsv).join(',')];
+      for (const r of filtered) {
+        lines.push(rowToCsvLine(r));
+      }
+      const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const name = `checklist-calandra-${y}-${m}-${day}.csv`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }
+
+    elSearch.addEventListener('input', applyFilters);
+    elTeam.addEventListener('change', applyFilters);
+    elExport.addEventListener('click', exportCsv);
+    elPrev.addEventListener('click', () => {
+      if (page > 1) {
+        page -= 1;
+        render();
+      }
+    });
+    elNext.addEventListener('click', () => {
+      const pages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+      if (page < pages) {
+        page += 1;
+        render();
+      }
+    });
+
+    try {
+      const q = query(collection(db, COL), orderBy('criadoEm', 'desc'));
+      const snap = await getDocs(q);
+      allRows = snap.docs.map((d) => rowFromDoc(d.id, d.data()));
+      filtered = allRows.slice();
+    } catch (err) {
+      console.error('[matriz-calandra]', err);
+      allRows = [];
+      filtered = [];
+    }
+
+    elLoading.hidden = true;
+    elPanel.hidden = false;
+    render();
+    }
+  </script>
+</body>
+</html>

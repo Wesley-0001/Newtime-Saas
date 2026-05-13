@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amostras e Perdas — Check-in de turno | New Time</title>
+  <link rel="icon" type="image/png" href="../../images/logo-black.png" />
+  <link rel="stylesheet" href="../../css/style.css" />
+  <link rel="stylesheet" href="../../css/checklist-checkin-success.css" />
+  <style>
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .calandra-app {
+      min-height: 100vh;
+      font-family: inherit;
+      background-color: #eef1f8;
+      background-image: radial-gradient(circle at 20% 50%, rgba(0, 43, 91, 0.04) 0%, transparent 60%),
+        radial-gradient(circle at 80% 20%, rgba(0, 43, 91, 0.03) 0%, transparent 50%);
+    }
+
+    .calandra-topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      height: 56px;
+      padding: 0 28px;
+      background: #002b5b;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      box-sizing: border-box;
+    }
+
+    .calandra-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 0 12px;
+      min-width: 0;
+      flex-wrap: wrap;
+      row-gap: 10px;
+    }
+
+    .calandra-topbar-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.75);
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .calandra-topbar-pill {
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.02em;
+    }
+
+    .calandra-shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    .calandra-layout {
+      display: grid;
+      grid-template-columns: 1fr 240px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 767px) {
+      .calandra-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .calandra-side {
+        order: 99;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .calandra-topbar {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-rows: auto auto;
+        gap: 10px 12px;
+        align-items: center;
+        height: auto;
+        min-height: 56px;
+        padding: 10px 16px;
+      }
+      .calandra-topbar-left {
+        display: contents;
+      }
+      .calandra-topbar-title {
+        grid-column: 1;
+        grid-row: 1;
+        min-width: 0;
+        white-space: normal;
+        line-height: 1.35;
+        overflow: visible;
+        text-overflow: clip;
+      }
+      .calandra-topbar-pill {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+      }
+      .amostras-app .checklist-hub-links {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+      }
+    }
+
+    .calandra-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    #form-amostras .calandra-step-panel[data-step='1'] {
+      order: 1;
+    }
+    #form-amostras .calandra-step-panel[data-step='2'] {
+      order: 2;
+    }
+
+    #form-amostras .calandra-step-panel {
+      display: block !important;
+    }
+
+    #form-amostras .calandra-step-panel[hidden] {
+      display: block !important;
+    }
+
+    .calandra-card {
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 43, 91, 0.08);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 43, 91, 0.06);
+      overflow: hidden;
+      margin-bottom: 14px;
+      animation: slideUp 0.3s ease forwards;
+      opacity: 0;
+    }
+
+    #form-amostras .calandra-step-panel[data-step='1'] > .calandra-card {
+      animation-delay: 0.05s;
+    }
+    #form-amostras .calandra-step-panel[data-step='2'] > .calandra-card {
+      animation-delay: 0.1s;
+    }
+
+    .calandra-card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background: #fafbfd;
+      border-bottom: 1px solid rgba(0, 43, 91, 0.06);
+    }
+
+    .calandra-card-kicker {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #002b5b;
+      opacity: 0.7;
+      margin: 0;
+    }
+
+    .calandra-card-body {
+      padding: 20px;
+    }
+
+    .calandra-label-up {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8b93a7;
+      margin-bottom: 6px;
+    }
+
+    .calandra-input {
+      width: 100%;
+      background: #f8f9fc;
+      border: 1.5px solid #e2e6f0;
+      border-radius: 9px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #1a2340;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .calandra-input:focus {
+      border-color: #002b5b;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(0, 43, 91, 0.08);
+      background: #fff;
+    }
+
+    .calandra-row-flex {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .calandra-field-grow {
+      flex: 1 1 200px;
+      min-width: 0;
+    }
+
+    .calandra-radio-grid-eq {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    @media (max-width: 520px) {
+      .calandra-radio-grid-eq {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .calandra-radio-tile {
+      position: relative;
+      display: block;
+      cursor: pointer;
+    }
+
+    .calandra-radio-tile input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .calandra-radio-tile span {
+      display: block;
+      background: #f4f7ff;
+      border: 1.5px solid #c5d0e8;
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #4a5568;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .calandra-radio-tile span:hover {
+      border-color: #002b5b;
+      background: #ebf0ff;
+      color: #002b5b;
+    }
+
+    .calandra-radio-tile input:focus-visible + span {
+      outline: 2px solid #002b5b;
+      outline-offset: 2px;
+    }
+
+    .calandra-radio-tile input:checked + span {
+      background: #002b5b;
+      border-color: #002b5b;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0, 43, 91, 0.3);
+    }
+
+    .calandra-prod-input {
+      font-size: 36px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: -0.02em;
+      color: #002b5b;
+      background: #f4f7ff;
+      border: 2px solid #c5d0e8;
+      border-radius: 12px;
+      padding: 14px 20px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .calandra-prod-input:focus {
+      border-color: #002b5b;
+      box-shadow: 0 0 0 4px rgba(0, 43, 91, 0.1);
+      background: #fff;
+    }
+
+    .calandra-prod-input-sm {
+      font-size: 20px;
+      font-weight: 800;
+      text-align: center;
+      letter-spacing: -0.02em;
+      color: #002b5b;
+      background: #f4f7ff;
+      border: 2px solid #c5d0e8;
+      border-radius: 12px;
+      padding: 12px 16px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .calandra-prod-input-sm:focus {
+      border-color: #002b5b;
+      box-shadow: 0 0 0 4px rgba(0, 43, 91, 0.1);
+      background: #fff;
+    }
+
+    .calandra-check-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid #f1f3f9;
+    }
+
+    .calandra-check-item:last-of-type {
+      border-bottom: none;
+    }
+
+    .calandra-check-text {
+      flex: 1;
+      font-size: 13px;
+      color: #2d3748;
+      line-height: 1.4;
+      min-width: 0;
+    }
+
+    .calandra-sn-group {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .calandra-sn {
+      background: #f4f7ff;
+      border: 1.5px solid #c5d0e8;
+      border-radius: 7px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #8b93a7;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+
+    .calandra-sn:not(.is-sim-active):not(.is-nao-active):hover {
+      border-color: #9ba8c0;
+      color: #4a5568;
+    }
+
+    .calandra-sn.is-sim-active {
+      background: #ebfbee;
+      border-color: #8ce99a;
+      color: #2b8a3e;
+      box-shadow: 0 1px 4px rgba(43, 138, 62, 0.15);
+    }
+
+    .calandra-sn.is-nao-active {
+      background: #fff5f5;
+      border-color: #ffa8a8;
+      color: #c92a2a;
+      box-shadow: 0 1px 4px rgba(201, 42, 42, 0.12);
+    }
+
+    .calandra-textarea {
+      width: 100%;
+      border: 1.5px solid #e2e6f0;
+      border-radius: 9px;
+      padding: 11px 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #1a2340;
+      background: #f8f9fc;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .calandra-textarea::placeholder {
+      color: #b0b8cc;
+    }
+
+    .calandra-textarea:focus {
+      border-color: #002b5b;
+      box-shadow: 0 0 0 3px rgba(0, 43, 91, 0.08);
+      background: #fff;
+      outline: none;
+    }
+
+    .calandra-two-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 640px) {
+      .calandra-two-cards {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .calandra-conditional {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .calandra-conditional.is-visible {
+      display: block;
+    }
+
+    .calandra-alert {
+      display: none;
+      background: #fff5f5;
+      border: 1px solid #ffa8a8;
+      border-left: 3px solid #c92a2a;
+      border-radius: 0 9px 9px 0;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #c92a2a;
+      line-height: 1.45;
+      margin-bottom: 16px;
+    }
+
+    .calandra-alert.is-visible {
+      display: block;
+    }
+
+    .calandra-side {
+      position: static;
+      top: auto;
+    }
+
+    .calandra-side-card {
+      position: sticky;
+      top: 72px;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 43, 91, 0.08);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 43, 91, 0.06);
+      padding: 20px;
+    }
+
+    .calandra-side-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #8b93a7;
+      margin: 0 0 16px;
+    }
+
+    .calandra-side-pct {
+      font-size: 36px;
+      font-weight: 800;
+      color: #002b5b;
+      margin: 0 0 4px;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .calandra-side-sub {
+      font-size: 12px;
+      color: #8b93a7;
+      margin: 0 0 0;
+    }
+
+    .calandra-side-track {
+      height: 5px;
+      border-radius: 3px;
+      background: #eef1f8;
+      overflow: hidden;
+      margin: 14px 0;
+    }
+
+    .calandra-side-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #002b5b, #1b4f8a);
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .calandra-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 0;
+      border-bottom: 1px solid #f1f3f9;
+      font-size: 12px;
+      color: #4a5568;
+    }
+
+    .calandra-status-row:last-child {
+      border-bottom: none;
+    }
+
+    .calandra-status-lbl {
+      font-size: 12px;
+      color: #4a5568;
+    }
+
+    .calandra-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 5px;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    .calandra-badge-ok {
+      background: #ebfbee;
+      color: #2b8a3e;
+    }
+
+    .calandra-badge-pend {
+      background: #fff4e6;
+      color: #e67700;
+    }
+
+    .calandra-badge-empty {
+      background: #f1f3f9;
+      color: #8b93a7;
+    }
+
+    .calandra-submit-main {
+      width: 100%;
+      margin-top: 16px;
+      background: #002b5b;
+      color: #fff;
+      border: none;
+      border-radius: 11px;
+      padding: 15px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+    }
+
+    .calandra-submit-main:hover:not(:disabled) {
+      background: #001f45;
+      box-shadow: 0 4px 16px rgba(0, 43, 91, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .calandra-submit-main:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .calandra-submit-main:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+    }
+
+    .calandra-submit-hint {
+      margin: 8px 0 0;
+      font-size: 11px;
+      color: #b0b8cc;
+      text-align: center;
+    }
+
+    .calandra-success.calandra-card {
+      animation: none;
+      opacity: 1;
+      margin-bottom: 0;
+    }
+
+    .calandra-success {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+      max-width: 520px;
+      margin: 24px auto 0;
+    }
+
+    .calandra-success.is-visible {
+      display: block;
+    }
+
+    .calandra-success-ico {
+      font-size: 48px;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+
+    .calandra-success h3 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #002b5b;
+      margin: 0 0 8px;
+    }
+
+    .calandra-success p {
+      margin: 0;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .calandra-visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    .calandra-js-nav {
+      position: fixed;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+      pointer-events: none;
+    }
+
+    .calandra-js-nav button {
+      pointer-events: none !important;
+    }
+
+    .calandra-check-table-hidden {
+      position: absolute;
+      left: -9999px;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+
+    .calandra-step-review {
+      display: none !important;
+    }
+
+    .calandra-hint-11 {
+      font-size: 12px;
+      color: #8b93a7;
+      text-align: center;
+      letter-spacing: 0.01em;
+      margin: 8px 0 0;
+    }
+
+    .calandra-hint-11-left {
+      font-size: 11px;
+      color: #8b93a7;
+      margin: 0 0 8px;
+      line-height: 1.4;
+    }
+
+    .calandra-q {
+      font-size: 13px;
+      color: #2d3748;
+      margin: 0 0 10px;
+    }
+
+    /* —— Amostras e Perdas (#A374FF) —— */
+    .amostras-app.calandra-app {
+      background-color: #f3f0ff;
+      background-image: radial-gradient(circle at 18% 40%, rgba(163, 116, 255, 0.12) 0%, transparent 55%),
+        radial-gradient(circle at 82% 18%, rgba(163, 116, 255, 0.08) 0%, transparent 45%);
+    }
+    .amostras-app .calandra-topbar {
+      background: linear-gradient(118deg, #ede9fe 0%, #f3f0ff 48%, #faf5ff 100%);
+      border-bottom: 1px solid rgba(163, 116, 255, 0.38);
+      box-shadow: 0 6px 28px rgba(91, 33, 182, 0.08);
+    }
+    .amostras-app .calandra-topbar-title {
+      color: #5b21b6;
+      font-weight: 600;
+    }
+    .amostras-app .calandra-topbar-pill {
+      background: rgba(255, 255, 255, 0.92);
+      border: 1px solid rgba(163, 116, 255, 0.4);
+      color: #5b21b6;
+    }
+    .amostras-app .calandra-card {
+      border-color: rgba(163, 116, 255, 0.18);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 18px rgba(163, 116, 255, 0.1);
+    }
+    .amostras-app .calandra-card-kicker {
+      color: #5b21b6;
+    }
+    .amostras-app .calandra-input:focus,
+    .amostras-app .calandra-textarea:focus,
+    .amostras-app .calandra-prod-input:focus,
+    .amostras-app .calandra-prod-input-sm:focus {
+      border-color: #a374ff;
+      box-shadow: 0 0 0 3px rgba(163, 116, 255, 0.22);
+    }
+    .amostras-app .calandra-radio-tile span:hover {
+      border-color: #a374ff;
+      background: #f5f0ff;
+      color: #5b21b6;
+    }
+    .amostras-app .calandra-radio-tile input:focus-visible + span {
+      outline: 2px solid #a374ff;
+    }
+    .amostras-app .calandra-radio-tile input:checked + span {
+      background: #a374ff;
+      border-color: #8b5cf6;
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(163, 116, 255, 0.45);
+    }
+    .amostras-app .calandra-sn.is-sim-active {
+      background: #ede9fe;
+      border-color: #a374ff;
+      color: #5b21b6;
+      box-shadow: 0 1px 6px rgba(163, 116, 255, 0.25);
+    }
+    .amostras-app .calandra-sn.is-nao-active {
+      background: #fff5f5;
+      border-color: #ffa8a8;
+      color: #c92a2a;
+    }
+    .amostras-app .calandra-submit-main {
+      background: #a374ff;
+    }
+    .amostras-app .calandra-submit-main:hover:not(:disabled) {
+      background: #8b5cf6;
+      box-shadow: 0 4px 16px rgba(163, 116, 255, 0.45);
+    }
+    .amostras-app .calandra-side-fill {
+      background: linear-gradient(90deg, #a374ff, #7c3aed);
+    }
+    .amostras-app .calandra-side-pct {
+      color: #5b21b6;
+    }
+    .amostras-app .calandra-prod-input,
+    .amostras-app .calandra-prod-input-sm {
+      color: #5b21b6;
+      border-color: rgba(163, 116, 255, 0.45);
+      background: #faf5ff;
+    }
+    .amostras-app .calandra-success h3 {
+      color: #5b21b6;
+    }
+
+    /* Fluxo Papel / Tecido */
+    .am-flow-bar {
+      position: sticky;
+      top: 56px;
+      z-index: 40;
+      width: 100%;
+      margin: 0 0 16px;
+      padding: 14px 18px;
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid rgba(163, 116, 255, 0.22);
+      box-shadow: 0 2px 12px rgba(163, 116, 255, 0.08);
+    }
+    .am-flow-label {
+      margin: 0 0 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6b21a8;
+      opacity: 0.85;
+    }
+    .am-flow-seg {
+      display: flex;
+      gap: 0;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid rgba(163, 116, 255, 0.35);
+      max-width: 520px;
+    }
+    .am-flow-opt {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+    }
+    .am-flow-opt input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .am-flow-opt span {
+      display: block;
+      text-align: center;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #5b21b6;
+      background: #faf5ff;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .am-flow-opt:first-child span {
+      border-right: 1px solid rgba(163, 116, 255, 0.25);
+    }
+    .am-flow-opt input:focus-visible + span {
+      outline: 2px solid #a374ff;
+      outline-offset: -2px;
+    }
+    .am-flow-opt input:checked + span {
+      background: linear-gradient(135deg, #a374ff, #8b5cf6);
+      color: #fff;
+    }
+    .am-flow-opt:hover input:not(:checked) + span {
+      background: #f3e8ff;
+    }
+    .am-flow-hint {
+      margin: 10px 0 0;
+      font-size: 12px;
+      color: #8b93a7;
+      line-height: 1.45;
+    }
+    .am-subk {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #8b93a7;
+      margin: 18px 0 10px;
+    }
+    .am-subk:first-of-type {
+      margin-top: 0;
+    }
+    .am-choice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 8px;
+    }
+    @media (min-width: 720px) {
+      .am-choice-grid--dense {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    .am-radio-tile {
+      position: relative;
+      display: block;
+      cursor: pointer;
+    }
+    .am-radio-tile input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .am-radio-tile span {
+      display: block;
+      background: #faf5ff;
+      border: 1.5px solid rgba(163, 116, 255, 0.28);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #4338ca;
+      line-height: 1.35;
+      transition: all 0.15s ease;
+    }
+    .am-radio-tile span:hover {
+      border-color: #a374ff;
+      background: #f5f0ff;
+    }
+    .am-radio-tile input:focus-visible + span {
+      outline: 2px solid #a374ff;
+      outline-offset: 2px;
+    }
+    .am-radio-tile input:checked + span {
+      background: #a374ff;
+      border-color: #7c3aed;
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(163, 116, 255, 0.35);
+    }
+    .am-flow-panel[hidden] {
+      display: none !important;
+    }
+    .am-subcard {
+      margin-bottom: 20px;
+      padding: 18px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(163, 116, 255, 0.28);
+      background: rgba(250, 245, 255, 0.55);
+    }
+    .am-subcard:last-of-type {
+      margin-bottom: 0;
+    }
+    .am-split-title {
+      margin: 0 0 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(163, 116, 255, 0.22);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: #5b21b6;
+    }
+    body.dark-mode.amostras-app .am-subcard,
+    body.dark-mode .amostras-app .am-subcard {
+      background: rgba(24, 20, 38, 0.65);
+      border-color: rgba(163, 116, 255, 0.35);
+    }
+    body.dark-mode.amostras-app .am-split-title,
+    body.dark-mode .amostras-app .am-split-title {
+      color: #e9d5ff;
+      border-bottom-color: rgba(163, 116, 255, 0.25);
+    }
+    body.dark-mode.amostras-app .am-flow-bar,
+    body.dark-mode .amostras-app .am-flow-bar {
+      background: #141022;
+      border-color: rgba(163, 116, 255, 0.35);
+    }
+    body.dark-mode.amostras-app .am-flow-label,
+    body.dark-mode .amostras-app .am-flow-label {
+      color: #e9d5ff;
+    }
+    body.dark-mode.amostras-app .am-flow-opt span,
+    body.dark-mode .amostras-app .am-flow-opt span {
+      background: rgba(30, 27, 48, 0.95);
+      color: #ddd6fe;
+    }
+    body.dark-mode.amostras-app .am-flow-opt input:checked + span,
+    body.dark-mode .amostras-app .am-flow-opt input:checked + span {
+      color: #fff;
+    }
+    body.dark-mode.amostras-app .am-radio-tile span,
+    body.dark-mode .amostras-app .am-radio-tile span {
+      background: rgba(30, 27, 48, 0.9);
+      border-color: rgba(163, 116, 255, 0.35);
+      color: #e9d5ff;
+    }
+    body.dark-mode.amostras-app .am-subk,
+    body.dark-mode .amostras-app .am-subk {
+      color: #a78bfa;
+    }
+    body.dark-mode.amostras-app .am-flow-hint,
+    body.dark-mode .amostras-app .am-flow-hint {
+      color: #9ca3af;
+    }
+  </style>
+</head>
+<body data-nt-firebase-lite="1" class="calandra-app amostras-app">
+  <header class="calandra-topbar">
+    <div class="calandra-topbar-left">
+      <span class="calandra-topbar-title">Amostras e Perdas</span>
+      <nav class="checklist-hub-links" aria-label="Trocar checklist de setor">
+        <a class="checklist-hub-btn" href="calandra.html">Calandra</a>
+        <a class="checklist-hub-btn" href="impressao.html">Impressão</a>
+        <span class="checklist-hub-btn is-current" aria-current="page">Amostras</span>
+      </nav>
+    </div>
+    <div class="calandra-topbar-pill" id="topbar-progress-text" aria-live="polite">0% concluído</div>
+  </header>
+
+  <div class="calandra-shell">
+    <div class="calandra-layout">
+      <div class="calandra-main">
+        <form id="form-amostras" novalidate>
+          <div class="am-flow-bar" id="am-flow-bar">
+            <p class="am-flow-label">Tipo de lançamento</p>
+            <div class="am-flow-seg" role="radiogroup" aria-label="Fluxo Papel ou Tecido">
+              <label class="am-flow-opt">
+                <input type="radio" name="material_fluxo" value="papel" checked />
+                <span>Fluxo Papel</span>
+              </label>
+              <label class="am-flow-opt">
+                <input type="radio" name="material_fluxo" value="tecido" />
+                <span>Fluxo Tecido</span>
+              </label>
+            </div>
+            <p class="am-flow-hint">Escolha o material antes de preencher a etapa de quantidade e motivos. Só os campos do fluxo ativo serão validados.</p>
+          </div>
+
+          <div class="calandra-alert" id="step-alert" role="alert"></div>
+
+          <section class="calandra-step-panel is-active" data-step="1" aria-labelledby="titulo-e1">
+            <div class="calandra-card">
+              <div class="calandra-card-head">
+                <p class="calandra-card-kicker" id="titulo-e1">Identificação do turno</p>
+              </div>
+              <div class="calandra-card-body">
+                <div class="calandra-row-flex">
+                  <div class="calandra-field-grow">
+                    <label class="calandra-label-up" for="data_inicio_turno">Data de início do turno *</label>
+                    <input class="calandra-input" type="date" id="data_inicio_turno" name="data_inicio_turno" />
+                  </div>
+                  <div class="calandra-field-grow" style="flex:2 1 280px">
+                    <span class="calandra-label-up">Equipe *</span>
+                    <div class="calandra-radio-grid-eq" id="equipe-group">
+                      <label class="calandra-radio-tile"><input type="radio" name="equipe" value="EQ1" /><span>EQ1</span></label>
+                      <label class="calandra-radio-tile"><input type="radio" name="equipe" value="EQ2" /><span>EQ2</span></label>
+                      <label class="calandra-radio-tile"><input type="radio" name="equipe" value="EQ3" /><span>EQ3</span></label>
+                      <label class="calandra-radio-tile"><input type="radio" name="equipe" value="EQ4" /><span>EQ4</span></label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="calandra-step-panel" data-step="2" hidden aria-labelledby="titulo-e3">
+            <div class="calandra-card">
+              <div class="calandra-card-head">
+                <p class="calandra-card-kicker" id="titulo-e3">Amostras e perdas no turno</p>
+              </div>
+              <div class="calandra-card-body">
+                <p class="calandra-hint-11-left" style="margin-top:0">
+                  Preencha apenas o fluxo escolhido no topo (Papel ou Tecido). No <strong>tecido</strong>, use os blocos
+                  <strong>Amostras</strong> e <strong>Perdas</strong>; em Amostras não há motivo de perda.
+                </p>
+
+                <div id="am-panel-papel" class="am-flow-panel">
+                  <p class="am-subk">Papel — quantidade e equipe</p>
+                  <label class="calandra-label-up" for="qtd_papel">Quantidade *</label>
+                  <input
+                    class="calandra-prod-input"
+                    type="number"
+                    id="qtd_papel"
+                    name="qtd_papel"
+                    min="1"
+                    step="1"
+                    inputmode="numeric"
+                    placeholder="0"
+                  />
+                  <p class="calandra-hint-11-left" style="margin-top:10px">Unidade conforme controle interno (ex.: peças / unidades).</p>
+
+                  <p class="am-subk">Equipe que perdeu *</p>
+                  <div class="calandra-radio-grid-eq" id="equipe-perda-group">
+                    <label class="calandra-radio-tile"><input type="radio" name="equipe_perda" value="EQ1" /><span>EQ1</span></label>
+                    <label class="calandra-radio-tile"><input type="radio" name="equipe_perda" value="EQ2" /><span>EQ2</span></label>
+                    <label class="calandra-radio-tile"><input type="radio" name="equipe_perda" value="EQ3" /><span>EQ3</span></label>
+                    <label class="calandra-radio-tile"><input type="radio" name="equipe_perda" value="EQ4" /><span>EQ4</span></label>
+                  </div>
+
+                  <p class="am-subk">Motivo da perda *</p>
+                  <div class="am-choice-grid am-choice-grid--dense">
+                    <label class="am-radio-tile"><input type="radio" name="motivo_perda_papel" value="marcas_passada" /><span>Marcas de passada</span></label>
+                    <label class="am-radio-tile"><input type="radio" name="motivo_perda_papel" value="marcas_risco" /><span>Marcas de risco</span></label>
+                    <label class="am-radio-tile"><input type="radio" name="motivo_perda_papel" value="papel_amassado" /><span>Papel amassado</span></label>
+                    <label class="am-radio-tile"><input type="radio" name="motivo_perda_papel" value="papel_estriado" /><span>Papel estriado</span></label>
+                    <label class="am-radio-tile"><input type="radio" name="motivo_perda_papel" value="marcas_cabo_flat" /><span>Marcas de cabo flat</span></label>
+                    <label class="am-radio-tile"><input type="radio" name="motivo_perda_papel" value="erro_arquivo" /><span>Erro de arquivo</span></label>
+                    <label class="am-radio-tile"><input type="radio" name="motivo_perda_papel" value="estampas_duplicadas" /><span>Estampas duplicadas</span></label>
+                    <label class="am-radio-tile"><input type="radio" name="motivo_perda_papel" value="bobina_molhada" /><span>Bobina molhada</span></label>
+                    <label class="am-radio-tile"><input type="radio" name="motivo_perda_papel" value="papel_cru_defeito" /><span>Papel cru com defeito</span></label>
+                  </div>
+
+                  <p class="am-subk">Observações</p>
+                  <label class="calandra-visually-hidden" for="obs_papel">Observações papel</label>
+                  <textarea class="calandra-textarea" id="obs_papel" name="obs_papel" rows="3" placeholder="Observações sobre a perda em papel (opcional)"></textarea>
+                </div>
+
+                <div id="am-panel-tecid" class="am-flow-panel" hidden>
+                  <div class="am-subcard" id="am-tecid-amostra">
+                    <p class="am-split-title">Amostras</p>
+                    <label class="calandra-label-up" for="qtd_metros_amostra">Quantidade em metros *</label>
+                    <input
+                      class="calandra-prod-input"
+                      type="number"
+                      id="qtd_metros_amostra"
+                      name="qtd_metros_amostra"
+                      min="0"
+                      step="0.01"
+                      inputmode="decimal"
+                      placeholder="0,00"
+                    />
+                    <p class="calandra-hint-11-left" style="margin-top:8px">Use 0 m se não houver amostras; nesse caso o tipo de tecido abaixo fica opcional.</p>
+                    <p class="am-subk">Tipo de tecido *</p>
+                    <div class="am-choice-grid">
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_amostra" value="crepynho" /><span>Crepynho</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_amostra" value="duna_bco" /><span>Duna BCO</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_amostra" value="duna_off" /><span>Duna OFF</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_amostra" value="malha_suede" /><span>Malha Suede</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_amostra" value="suplex" /><span>Suplex</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_amostra" value="tule" /><span>Tule</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_amostra" value="alfaiataria" /><span>Alfaiataria</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_amostra" value="linhao" /><span>Linhão</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_amostra" value="crepy_ggt" /><span>Crepy GGT</span></label>
+                    </div>
+                    <p class="am-subk">Observações</p>
+                    <label class="calandra-visually-hidden" for="obs_tecido_amostra">Observações amostras (tecido)</label>
+                    <textarea class="calandra-textarea" id="obs_tecido_amostra" name="obs_tecido_amostra" rows="2" placeholder="Observações sobre amostras em tecido (opcional)"></textarea>
+                  </div>
+
+                  <div class="am-subcard" id="am-tecid-perda">
+                    <p class="am-split-title">Perdas</p>
+                    <label class="calandra-label-up" for="qtd_metros_perda">Quantidade em metros *</label>
+                    <input
+                      class="calandra-prod-input"
+                      type="number"
+                      id="qtd_metros_perda"
+                      name="qtd_metros_perda"
+                      min="0.01"
+                      step="0.01"
+                      inputmode="decimal"
+                      placeholder="0,00"
+                    />
+                    <p class="am-subk">Tipo de tecido *</p>
+                    <div class="am-choice-grid">
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_perda" value="crepynho" /><span>Crepynho</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_perda" value="duna_bco" /><span>Duna BCO</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_perda" value="duna_off" /><span>Duna OFF</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_perda" value="malha_suede" /><span>Malha Suede</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_perda" value="suplex" /><span>Suplex</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_perda" value="tule" /><span>Tule</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_perda" value="alfaiataria" /><span>Alfaiataria</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_perda" value="linhao" /><span>Linhão</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="tipo_tecido_perda" value="crepy_ggt" /><span>Crepy GGT</span></label>
+                    </div>
+                    <p class="am-subk">Motivo da perda *</p>
+                    <div class="am-choice-grid am-choice-grid--dense">
+                      <label class="am-radio-tile"><input type="radio" name="motivo_perda_tecido" value="vincos" /><span>Vincos</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="motivo_perda_tecido" value="estrias" /><span>Estrias</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="motivo_perda_tecido" value="erro_operacional" /><span>Erro operacional</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="motivo_perda_tecido" value="diferenca_cor" /><span>Diferença de cor</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="motivo_perda_tecido" value="largura_estampa" /><span>Largura da estampa</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="motivo_perda_tecido" value="defeito_malha" /><span>Defeito de malha / tecido</span></label>
+                      <label class="am-radio-tile"><input type="radio" name="motivo_perda_tecido" value="outro" /><span>Outro motivo</span></label>
+                    </div>
+                    <p class="am-subk">Observações</p>
+                    <label class="calandra-visually-hidden" for="obs_tecido_perda">Observações perdas (tecido)</label>
+                    <textarea class="calandra-textarea" id="obs_tecido_perda" name="obs_tecido_perda" rows="2" placeholder="Observações sobre perdas em tecido (opcional)"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="calandra-visually-hidden" aria-hidden="true">
+            <span id="step-indicator">Etapa 1 de 2</span>
+            <div style="height:4px;background:#eee;width:120px"><div id="progress-fill" style="height:100%;width:50%;background:#A374FF"></div></div>
+          </div>
+
+          <div class="calandra-js-nav" aria-hidden="true">
+            <button type="button" id="btn-back" tabindex="-1">Voltar</button>
+            <button type="button" id="btn-next" tabindex="-1">Avançar</button>
+            <button type="submit" id="btn-submit" tabindex="-1">Enviar</button>
+          </div>
+        </form>
+      </div>
+
+      <aside class="calandra-side">
+        <div class="calandra-side-card">
+          <p class="calandra-side-title">Status</p>
+          <div class="calandra-side-track" aria-hidden="true">
+            <div class="calandra-side-fill" id="side-progress-bar"></div>
+          </div>
+          <p class="calandra-side-pct" id="side-pct">0%</p>
+          <p class="calandra-side-sub" id="side-pct-label">0 de 0 campos concluídos</p>
+
+          <div class="calandra-status-row">
+            <span class="calandra-status-lbl">Identificação</span>
+            <span class="calandra-badge calandra-badge-empty" id="badge-identificacao">—</span>
+          </div>
+          <div class="calandra-status-row">
+            <span class="calandra-status-lbl">Qtd. Amostras / Perdas</span>
+            <span class="calandra-badge calandra-badge-empty" id="badge-producao">—</span>
+          </div>
+          <button type="submit" class="calandra-submit-main" id="btn-submit-main" form="form-amostras">Enviar check-in →</button>
+          <p class="calandra-submit-hint" id="submit-hint">Preencha todos os campos obrigatórios</p>
+        </div>
+      </aside>
+    </div>
+
+    <div class="calandra-card calandra-success" id="success-panel" aria-live="polite">
+      <div class="calandra-success-ico" aria-hidden="true">✅</div>
+      <h3>Check-in registrado (demonstração)</h3>
+      <p>Visual apenas — sem gravação no servidor. Redirecionando…</p>
+    </div>
+  </div>
+
+  <script type="module" src="../../js/checklist/amostras.js"></script>
+  <script>
+    (function () {
+      function parseIntSafe(v) {
+        var n = parseInt(String(v).trim(), 10);
+        return Number.isFinite(n) ? n : NaN;
+      }
+
+      function sectionIdentificacao(form) {
+        var d = form.querySelector('#data_inicio_turno');
+        var eq = form.querySelector('input[name="equipe"]:checked');
+        return !!(d && d.value && eq);
+      }
+
+      function parseDecSafe(v) {
+        var s = String(v == null ? '' : v).trim().replace(',', '.');
+        var n = parseFloat(s);
+        return Number.isFinite(n) ? n : NaN;
+      }
+
+      function getMaterialFluxo(form) {
+        var r = form.querySelector('input[name="material_fluxo"]:checked');
+        return r ? r.value : 'papel';
+      }
+
+      function wireMaterialFlow() {
+        var form = document.getElementById('form-amostras');
+        var pp = document.getElementById('am-panel-papel');
+        var pt = document.getElementById('am-panel-tecid');
+        if (!form || !pp || !pt) return;
+        function sync() {
+          var v = getMaterialFluxo(form);
+          var isPapel = v === 'papel';
+          pp.hidden = !isPapel;
+          pt.hidden = isPapel;
+          pp.setAttribute('aria-hidden', isPapel ? 'false' : 'true');
+          pt.setAttribute('aria-hidden', isPapel ? 'true' : 'false');
+          updateProgress();
+        }
+        form.addEventListener('change', function (e) {
+          if (e.target && e.target.name === 'material_fluxo') sync();
+        });
+        sync();
+      }
+
+      function sectionProducao(form) {
+        var flux = getMaterialFluxo(form);
+        if (flux === 'papel') {
+          var el = form.querySelector('#qtd_papel');
+          var n = el ? parseIntSafe(el.value) : NaN;
+          if (!Number.isFinite(n) || n < 1) return false;
+          if (!form.querySelector('input[name="equipe_perda"]:checked')) return false;
+          if (!form.querySelector('input[name="motivo_perda_papel"]:checked')) return false;
+          return true;
+        }
+        var qa = form.querySelector('#qtd_metros_amostra');
+        var ra = qa ? String(qa.value).trim().replace(',', '.') : '';
+        if (ra === '') return false;
+        var na = parseDecSafe(ra);
+        if (!Number.isFinite(na) || na < 0) return false;
+        if (na > 0 && !form.querySelector('input[name="tipo_tecido_amostra"]:checked')) return false;
+
+        var qp = form.querySelector('#qtd_metros_perda');
+        var rp = qp ? String(qp.value).trim().replace(',', '.') : '';
+        if (rp === '') return false;
+        var np = parseDecSafe(rp);
+        if (!Number.isFinite(np) || np <= 0) return false;
+        if (!form.querySelector('input[name="tipo_tecido_perda"]:checked')) return false;
+        if (!form.querySelector('input[name="motivo_perda_tecido"]:checked')) return false;
+        return true;
+      }
+
+      function setBadge(el, mode, text) {
+        if (!el) return;
+        el.textContent = text;
+        el.classList.remove('calandra-badge-ok', 'calandra-badge-pend', 'calandra-badge-empty');
+        if (mode === 'ok') el.classList.add('calandra-badge-ok');
+        else if (mode === 'pend') el.classList.add('calandra-badge-pend');
+        else el.classList.add('calandra-badge-empty');
+      }
+
+      function updateProgress() {
+        var form = document.getElementById('form-amostras');
+        if (!form) return;
+
+        var idOk = sectionIdentificacao(form);
+        var prodOk = sectionProducao(form);
+
+        var numer = (idOk ? 1 : 0) + (prodOk ? 1 : 0);
+        var denom = 2;
+        var pct = denom ? Math.min(100, Math.round((100 * numer) / denom)) : 0;
+        var top = document.getElementById('topbar-progress-text');
+        if (top) top.textContent = pct + '% concluído';
+        var bar = document.getElementById('side-progress-bar');
+        if (bar) bar.style.width = pct + '%';
+        var sp = document.getElementById('side-pct');
+        if (sp) sp.textContent = pct + '%';
+        var sl = document.getElementById('side-pct-label');
+        if (sl) {
+          sl.textContent = numer + ' de ' + denom + ' campos concluídos';
+        }
+
+        setBadge(
+          document.getElementById('badge-identificacao'),
+          idOk ? 'ok' : 'empty',
+          idOk ? '✓ ok' : '—'
+        );
+        setBadge(
+          document.getElementById('badge-producao'),
+          prodOk ? 'ok' : 'empty',
+          prodOk ? '✓ ok' : '—'
+        );
+      }
+
+      function bindForm() {
+        var form = document.getElementById('form-amostras');
+        if (!form) return;
+        form.addEventListener('input', updateProgress);
+        form.addEventListener('change', updateProgress);
+        updateProgress();
+      }
+
+      function mirrorSubmitState() {
+        var hidden = document.getElementById('btn-submit');
+        var main = document.getElementById('btn-submit-main');
+        if (!hidden || !main) return;
+        function syncMainFromHidden() {
+          main.disabled = hidden.disabled;
+          var t = (hidden.textContent || '').trim();
+          if (t.indexOf('Enviando') !== -1) main.textContent = 'Enviando...';
+          else main.textContent = 'Enviar check-in →';
+        }
+        var obs = new MutationObserver(syncMainFromHidden);
+        obs.observe(hidden, { attributes: true, attributeFilter: ['disabled', 'hidden'], childList: true, subtree: true, characterData: true });
+        var formEl = document.getElementById('form-amostras');
+        if (formEl) {
+          formEl.addEventListener(
+            'submit',
+            function () {
+              requestAnimationFrame(syncMainFromHidden);
+            },
+            true
+          );
+        }
+        syncMainFromHidden();
+      }
+
+      /** calandra.js esconde o submit fora da última etapa; forçamos fluxo de página única. */
+      var calandraSinglePageFixWired = false;
+      function wireCalandraSinglePageFix() {
+        if (calandraSinglePageFixWired) return;
+        calandraSinglePageFixWired = true;
+        var submit = document.getElementById('btn-submit');
+        var next = document.getElementById('btn-next');
+        var back = document.getElementById('btn-back');
+        function clamp() {
+          if (submit) submit.hidden = false;
+          if (next) next.hidden = true;
+          if (back) {
+            back.hidden = true;
+            back.style.visibility = 'hidden';
+          }
+        }
+        clamp();
+        if (submit) {
+          var mo = new MutationObserver(clamp);
+          mo.observe(submit, { attributes: true, attributeFilter: ['hidden'] });
+        }
+        if (next) {
+          var moN = new MutationObserver(clamp);
+          moN.observe(next, { attributes: true, attributeFilter: ['hidden'] });
+        }
+        if (back) {
+          var moB = new MutationObserver(clamp);
+          moB.observe(back, { attributes: true, attributeFilter: ['style', 'hidden'] });
+        }
+      }
+
+      function start() {
+        wireCalandraSinglePageFix();
+        wireMaterialFlow();
+        bindForm();
+        mirrorSubmitState();
+        updateProgress();
+      }
+
+      function boot() {
+        start();
+      }
+
+      window.addEventListener('load', function () {
+        wireCalandraSinglePageFix();
+        setTimeout(boot, 0);
+      });
+    })();
+  </script>
+</body>
+</html>

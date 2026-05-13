@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matriz de Dados — Checklists | New Time</title>
+  <link rel="icon" type="image/png" href="../../images/logo-black.png" />
+  <link rel="stylesheet" href="../../css/style.css" />
+  <style>
+    .md-page {
+      min-height: 100vh;
+      margin: 0;
+      font-family: inherit;
+      background: var(--bg-app);
+      color: var(--text-primary);
+    }
+
+    .md-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      height: 56px;
+      padding: 0 24px;
+      background: #002b5b;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      box-sizing: border-box;
+    }
+
+    .md-header img {
+      display: block;
+      height: 36px;
+      width: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .md-header h1 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .md-header-back {
+      margin-left: auto;
+      flex-shrink: 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .md-header-back:hover {
+      background: rgba(255, 255, 255, 0.18);
+    }
+
+    .md-main {
+      max-width: 100%;
+      padding: 20px 24px 32px;
+      box-sizing: border-box;
+    }
+
+    .md-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .md-toolbar input[type="search"] {
+      flex: 1 1 220px;
+      min-width: 180px;
+      max-width: 420px;
+      font-size: 13px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--input-text);
+      min-height: 40px;
+      box-sizing: border-box;
+    }
+
+    .md-filter-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .md-filter-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-right: 4px;
+    }
+
+    .md-filter-btn {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      background: var(--card-bg);
+      color: var(--text-primary);
+      min-height: 38px;
+      box-sizing: border-box;
+    }
+
+    .md-filter-btn:hover {
+      background: var(--bg-hover);
+    }
+
+    .md-filter-btn.is-active {
+      background: #002b5b;
+      color: #fff;
+      border-color: #002b5b;
+    }
+
+    body.dark-mode .md-filter-btn.is-active {
+      background: #1b4f8a;
+      border-color: #1b4f8a;
+    }
+
+    .md-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .md-table-scroll {
+      overflow: auto;
+      max-height: calc(100vh - 220px);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--card-bg);
+    }
+
+    .md-table {
+      width: max-content;
+      min-width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .md-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      background: #002b5b;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: left;
+      padding: 8px 10px;
+      white-space: nowrap;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+    }
+
+    body.dark-mode .md-table thead th {
+      background: #0f2744;
+    }
+
+    .md-table tbody td {
+      padding: 7px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    .md-table tbody tr:nth-child(odd) {
+      background: var(--card-bg);
+    }
+
+    .md-table tbody tr:nth-child(even) {
+      background: var(--bg-surface-2);
+    }
+
+    .md-table tbody tr:hover {
+      background: var(--bg-hover);
+    }
+
+    .md-row--calandra {
+      box-shadow: inset 4px 0 0 #2563eb;
+    }
+
+    .md-row--impressao {
+      box-shadow: inset 4px 0 0 #FFBED4;
+    }
+
+    .md-row--amostras {
+      box-shadow: inset 4px 0 0 #a374ff;
+    }
+
+    .md-setor {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+    }
+
+    .md-setor--calandra {
+      background: rgba(37, 99, 235, 0.14);
+      color: #1d4ed8;
+      border: 1px solid rgba(37, 99, 235, 0.35);
+    }
+
+    .md-setor--impressao {
+      background: rgba(255, 190, 212, 0.55);
+      color: #7a2d4a;
+      border: 1px solid #FFBED4;
+    }
+
+    .md-setor--amostras {
+      background: rgba(163, 116, 255, 0.22);
+      color: #5b21b6;
+      border: 1px solid rgba(163, 116, 255, 0.55);
+    }
+
+    body.dark-mode .md-setor--calandra {
+      background: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+      border-color: rgba(96, 165, 250, 0.45);
+    }
+
+    body.dark-mode .md-setor--impressao {
+      background: rgba(255, 190, 212, 0.18);
+      color: #fbcfe8;
+      border-color: rgba(255, 190, 212, 0.45);
+    }
+
+    body.dark-mode .md-setor--amostras {
+      background: rgba(163, 116, 255, 0.2);
+      color: #e9d5ff;
+      border-color: rgba(196, 181, 253, 0.55);
+    }
+
+    .cell-sim {
+      display: inline-block;
+      background: #dcfce7;
+      color: #166534;
+      border-radius: 5px;
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .cell-nao {
+      display: inline-block;
+      background: #fee2e2;
+      color: #b91c1c;
+      border-radius: 5px;
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    body.dark-mode .cell-sim {
+      background: rgba(34, 197, 94, 0.2);
+      color: #86efac;
+    }
+
+    body.dark-mode .cell-nao {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+    }
+
+    .cell-muted {
+      color: var(--text-muted);
+      font-size: 11px;
+    }
+
+    .md-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      gap: 16px;
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+
+    .md-loading[hidden] {
+      display: none !important;
+    }
+
+    .md-spinner {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 3px solid var(--border);
+      border-top-color: var(--brand-primary);
+      animation: md-spin 0.75s linear infinite;
+    }
+
+    @keyframes md-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .md-empty {
+      text-align: center;
+      padding: 48px 20px;
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .md-empty[hidden] {
+      display: none !important;
+    }
+
+    .md-panel[hidden] {
+      display: none !important;
+    }
+
+    .md-col-text {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  </style>
+</head>
+<body data-nt-firebase-lite="1" class="md-page">
+  <header class="md-header">
+    <img src="../../images/logo-branco1.png" alt="New Time" width="120" height="36" />
+    <h1>Matriz de Dados — Checklists (Calandra, Impressão e Amostras)</h1>
+    <a class="md-header-back" href="../../app.html">← Sistema</a>
+  </header>
+
+  <main class="md-main">
+    <div id="md-loading" class="md-loading" aria-live="polite">
+      <div class="md-spinner" aria-hidden="true"></div>
+      <span>Validando acesso…</span>
+    </div>
+
+    <div id="md-denied" class="md-empty" hidden>
+      <p><strong>Acesso restrito.</strong> Apenas administradores podem visualizar a Matriz de Dados.</p>
+      <p><a href="../../app.html">Voltar ao sistema</a></p>
+    </div>
+
+    <div id="md-panel" class="md-panel" hidden>
+      <div class="md-toolbar">
+        <input type="search" id="md-search" placeholder="Buscar por equipe ou responsável…" autocomplete="off" />
+        <div class="md-filter-group" role="group" aria-label="Filtrar por setor">
+          <span class="md-filter-label">Setor</span>
+          <button type="button" class="md-filter-btn is-active" data-filter="todos" id="md-f-todos">Todos</button>
+          <button type="button" class="md-filter-btn" data-filter="calandra" id="md-f-calandra">Calandra</button>
+          <button type="button" class="md-filter-btn" data-filter="impressao" id="md-f-impressao">Impressão</button>
+          <button type="button" class="md-filter-btn" data-filter="amostras" id="md-f-amostras">Amostras</button>
+        </div>
+        <p class="md-meta" id="md-count"></p>
+      </div>
+
+      <div class="md-table-scroll">
+        <table class="md-table" aria-label="Matriz consolidada de checklists">
+          <thead>
+            <tr>
+              <th>Data / hora</th>
+              <th>Setor</th>
+              <th>Equipe</th>
+              <th>Responsável</th>
+              <th>Tipo (Papel/Tecido)</th>
+              <th>Qtd amostra</th>
+              <th>Tipo tecido</th>
+              <th>Motivo perda papel</th>
+              <th>Motivo perda tecido</th>
+              <th>Tem pedido</th>
+              <th>Qtd pedido</th>
+              <th>Obs.</th>
+            </tr>
+          </thead>
+          <tbody id="md-tbody"></tbody>
+        </table>
+      </div>
+
+      <div id="md-empty-rows" class="md-empty" hidden>Nenhum registro com os filtros atuais.</div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { requireAdmin } from '../../js/auth/admin-guard.js';
+    import { NT_MATRIZ_DEMO_CHECKINS_KEY } from '../../js/checklist/checkin-flow.js';
+
+    try {
+      if (!sessionStorage.getItem('cp_user')) {
+        const op = window.opener;
+        if (op) {
+          try {
+            const cp = op.sessionStorage.getItem('cp_user');
+            if (cp) sessionStorage.setItem('cp_user', cp);
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+
+    let allowed = false;
+    try {
+      requireAdmin();
+      allowed = true;
+    } catch (e) {
+      if (!e || e.message !== 'NOT_ADMIN') throw e;
+    }
+
+    const MOCK_ROWS = [
+      {
+        id: 'a1',
+        setor: 'Amostras e Perdas',
+        dataHora: '12/05/2026 07:10',
+        equipe: 'EQ2',
+        responsavel: 'Luiza Amaral',
+        tipoMaterial: 'Papel',
+        qtdAmostra: 12,
+        tipoTecido: '',
+        motivoPapel: 'Bobina molhada',
+        motivoTecido: '',
+        equipePerda: 'EQ3',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: 'Perdas conferidas no balanço'
+      },
+      {
+        id: 'a2',
+        setor: 'Amostras e Perdas',
+        dataHora: '11/05/2026 16:40',
+        equipe: 'EQ1',
+        responsavel: 'Ricardo Melo',
+        tipoMaterial: 'Tecido',
+        qtdAmostra: 4.5,
+        tipoTecido: 'Malha Suede',
+        motivoPapel: '',
+        motivoTecido: 'Vincos',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: 'Metragem conferida no cabide'
+      },
+      {
+        id: 'a3',
+        setor: 'Amostras e Perdas',
+        dataHora: '10/05/2026 09:05',
+        equipe: 'EQ4',
+        responsavel: 'Sandra Reis',
+        tipoMaterial: 'Papel',
+        qtdAmostra: 1,
+        tipoTecido: '',
+        motivoPapel: 'Erro de arquivo',
+        motivoTecido: '',
+        equipePerda: 'EQ4',
+        temPedido: 'Sim',
+        pedidoQtd: '1',
+        obs: 'Pedido de revisão separado'
+      },
+      {
+        id: '1',
+        setor: 'Calandra',
+        dataHora: '12/05/2026 06:15',
+        equipe: 'EQ1',
+        responsavel: 'Carlos Mendes',
+        tipoMaterial: '',
+        qtdAmostra: 38,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: 'Turno estável'
+      },
+      {
+        id: '2',
+        setor: 'Impressão',
+        dataHora: '12/05/2026 06:20',
+        equipe: 'EQ2',
+        responsavel: 'Ana Paula Rocha',
+        tipoMaterial: '',
+        qtdAmostra: 44,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Sim',
+        pedidoQtd: '3',
+        obs: ''
+      },
+      {
+        id: '3',
+        setor: 'Calandra',
+        dataHora: '12/05/2026 14:02',
+        equipe: 'EQ3',
+        responsavel: 'Roberto Lima',
+        tipoMaterial: '',
+        qtdAmostra: 52,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: 'Ajuste PVs pendente'
+      },
+      {
+        id: '4',
+        setor: 'Impressão',
+        dataHora: '12/05/2026 14:30',
+        equipe: 'EQ1',
+        responsavel: 'Fernanda Dias',
+        tipoMaterial: '',
+        qtdAmostra: 41,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: 'Tecido com largura irregular'
+      },
+      {
+        id: '5',
+        setor: 'Calandra',
+        dataHora: '11/05/2026 22:10',
+        equipe: 'EQ4',
+        responsavel: 'Heleno Costa',
+        tipoMaterial: '',
+        qtdAmostra: 36,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Sim',
+        pedidoQtd: '1',
+        obs: ''
+      },
+      {
+        id: '6',
+        setor: 'Impressão',
+        dataHora: '11/05/2026 22:45',
+        equipe: 'EQ3',
+        responsavel: 'Patrícia Nunes',
+        tipoMaterial: '',
+        qtdAmostra: 47,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: ''
+      },
+      {
+        id: '7',
+        setor: 'Calandra',
+        dataHora: '11/05/2026 14:00',
+        equipe: 'EQ2',
+        responsavel: 'Wesley Cruz',
+        tipoMaterial: '',
+        qtdAmostra: 55,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: 'Parada programada 20 min'
+      },
+      {
+        id: '8',
+        setor: 'Impressão',
+        dataHora: '11/05/2026 06:05',
+        equipe: 'EQ4',
+        responsavel: 'Lucas Martins',
+        tipoMaterial: '',
+        qtdAmostra: 33,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: ''
+      },
+      {
+        id: '9',
+        setor: 'Calandra',
+        dataHora: '10/05/2026 14:55',
+        equipe: 'EQ1',
+        responsavel: 'Renato Souza',
+        tipoMaterial: '',
+        qtdAmostra: 49,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Sim',
+        pedidoQtd: '5',
+        obs: 'Lote urgente'
+      },
+      {
+        id: '10',
+        setor: 'Impressão',
+        dataHora: '10/05/2026 15:12',
+        equipe: 'EQ2',
+        responsavel: 'Camila Freitas',
+        tipoMaterial: '',
+        qtdAmostra: 42,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: ''
+      },
+      {
+        id: '11',
+        setor: 'Calandra',
+        dataHora: '10/05/2026 06:30',
+        equipe: 'EQ3',
+        responsavel: 'Bruno Azevedo',
+        tipoMaterial: '',
+        qtdAmostra: 51,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: 'Limpeza setor pendente'
+      },
+      {
+        id: '12',
+        setor: 'Impressão',
+        dataHora: '09/05/2026 22:20',
+        equipe: 'EQ1',
+        responsavel: 'Juliana Prado',
+        tipoMaterial: '',
+        qtdAmostra: 39,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: 'Pequeno travamento impressora'
+      },
+      {
+        id: '13',
+        setor: 'Calandra',
+        dataHora: '09/05/2026 14:40',
+        equipe: 'EQ4',
+        responsavel: 'Marcos Vieira',
+        tipoMaterial: '',
+        qtdAmostra: 46,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: ''
+      },
+      {
+        id: '14',
+        setor: 'Impressão',
+        dataHora: '09/05/2026 06:50',
+        equipe: 'EQ3',
+        responsavel: 'Tatiane Moraes',
+        tipoMaterial: '',
+        qtdAmostra: 45,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Sim',
+        pedidoQtd: '2',
+        obs: ''
+      },
+      {
+        id: '15',
+        setor: 'Calandra',
+        dataHora: '08/05/2026 22:00',
+        equipe: 'EQ2',
+        responsavel: 'Igor Santana',
+        tipoMaterial: '',
+        qtdAmostra: 40,
+        tipoTecido: '',
+        motivoPapel: '',
+        motivoTecido: '',
+        temPedido: 'Não',
+        pedidoQtd: '',
+        obs: ''
+      }
+    ];
+
+    /** Exemplo do novo fluxo de check-in (Calandra · EQ3) — referência visual na matriz. */
+    const EXAMPLE_CHECKIN_FLOW_ROW = {
+      id: 'example-flow-calandra-eq3',
+      setor: 'Calandra',
+      dataHora: '12/05/2026 08:00',
+      equipe: 'EQ3',
+      responsavel: 'Exemplo fluxo UI',
+      tipoMaterial: '',
+      qtdAmostra: 48,
+      tipoTecido: '',
+      motivoPapel: '',
+      motivoTecido: '',
+      equipePerda: '',
+      temPedido: 'Não',
+      pedidoQtd: '',
+      obs: 'Referência do fluxo de confirmação (Calandra / Impressão / Amostras).'
+    };
+
+    function loadStoredDemoCheckins() {
+      try {
+        const raw = localStorage.getItem(NT_MATRIZ_DEMO_CHECKINS_KEY);
+        const arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function getMergedMatrixRows() {
+      return [...loadStoredDemoCheckins(), EXAMPLE_CHECKIN_FLOW_ROW, ...MOCK_ROWS];
+    }
+
+    function fmtQtdCell(r) {
+      const q = r.qtdAmostra;
+      if (q === undefined || q === null || q === '') return '<span class="cell-muted">—</span>';
+      const isTecido = r.tipoMaterial === 'Tecido';
+      let s = typeof q === 'number' ? (Number.isInteger(q) ? String(q) : String(q).replace('.', ',')) : String(q);
+      return esc(s) + (isTecido ? ' m' : '');
+    }
+
+    function fmtObsCell(r) {
+      let o = r.obs != null ? String(r.obs) : '';
+      if (r.setor === 'Amostras e Perdas' && r.tipoMaterial === 'Papel' && r.equipePerda) {
+        o = '[Eq. perda: ' + r.equipePerda + '] ' + o;
+      }
+      return o.trim()
+        ? `<td class="md-col-text" title="${esc(o)}">${esc(o)}</td>`
+        : `<td><span class="cell-muted">—</span></td>`;
+    }
+
+    function cellTipoMaterial(r) {
+      if (!r.tipoMaterial) return '<span class="cell-muted">—</span>';
+      return esc(r.tipoMaterial);
+    }
+
+    function cellTextOrDash(v) {
+      const s = v != null ? String(v).trim() : '';
+      return s ? esc(s) : '<span class="cell-muted">—</span>';
+    }
+
+    function badge(v) {
+      if (v === 'Sim') return '<span class="cell-sim">Sim</span>';
+      if (v === 'Não') return '<span class="cell-nao">Não</span>';
+      return '<span class="cell-muted">—</span>';
+    }
+
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    let filterSetor = 'todos';
+    let searchQ = '';
+
+    function norm(s) {
+      return String(s == null ? '' : s)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function filteredRows() {
+      return getMergedMatrixRows().filter((r) => {
+        if (filterSetor === 'calandra' && r.setor !== 'Calandra') return false;
+        if (filterSetor === 'impressao' && r.setor !== 'Impressão') return false;
+        if (filterSetor === 'amostras' && r.setor !== 'Amostras e Perdas') return false;
+        if (!searchQ.trim()) return true;
+        const q = norm(searchQ);
+        return (
+          norm(r.equipe).includes(q) ||
+          norm(r.responsavel).includes(q) ||
+          norm(r.tipoMaterial).includes(q) ||
+          norm(r.tipoTecido).includes(q) ||
+          norm(r.motivoPapel).includes(q) ||
+          norm(r.motivoTecido).includes(q)
+        );
+      });
+    }
+
+    function renderTable(rows) {
+      const tbody = document.getElementById('md-tbody');
+      const empty = document.getElementById('md-empty-rows');
+      const countEl = document.getElementById('md-count');
+      if (!tbody) return;
+
+      const merged = getMergedMatrixRows();
+      if (countEl) {
+        countEl.textContent =
+          rows.length === merged.length
+            ? `Exibindo ${rows.length} linhas (envios locais + exemplo do fluxo + base demo).`
+            : `Exibindo ${rows.length} de ${merged.length} linhas.`;
+      }
+
+      if (rows.length === 0) {
+        tbody.innerHTML = '';
+        if (empty) empty.hidden = false;
+        return;
+      }
+      if (empty) empty.hidden = true;
+
+      tbody.innerHTML = rows
+        .map((r) => {
+          const rowClass =
+            r.setor === 'Calandra'
+              ? 'md-row--calandra'
+              : r.setor === 'Impressão'
+                ? 'md-row--impressao'
+                : r.setor === 'Amostras e Perdas'
+                  ? 'md-row--amostras'
+                  : '';
+          const tagClass =
+            r.setor === 'Calandra'
+              ? 'md-setor md-setor--calandra'
+              : r.setor === 'Impressão'
+                ? 'md-setor md-setor--impressao'
+                : r.setor === 'Amostras e Perdas'
+                  ? 'md-setor md-setor--amostras'
+                  : 'md-setor';
+          return (
+            `<tr class="${rowClass}">` +
+            `<td>${esc(r.dataHora)}</td>` +
+            `<td><span class="${tagClass}">${esc(r.setor)}</span></td>` +
+            `<td>${esc(r.equipe)}</td>` +
+            `<td class="md-col-text" title="${esc(r.responsavel)}">${esc(r.responsavel)}</td>` +
+            `<td>${cellTipoMaterial(r)}</td>` +
+            `<td>${fmtQtdCell(r)}</td>` +
+            `<td class="md-col-text">${cellTextOrDash(r.tipoTecido)}</td>` +
+            `<td class="md-col-text">${cellTextOrDash(r.motivoPapel)}</td>` +
+            `<td class="md-col-text">${cellTextOrDash(r.motivoTecido)}</td>` +
+            `<td>${badge(r.temPedido)}</td>` +
+            `<td>${r.pedidoQtd ? esc(r.pedidoQtd) : '<span class="cell-muted">—</span>'}</td>` +
+            fmtObsCell(r) +
+            `</tr>`
+          );
+        })
+        .join('');
+    }
+
+    function render() {
+      renderTable(filteredRows());
+    }
+
+    function wireFilters() {
+      document.querySelectorAll('.md-filter-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const f = btn.getAttribute('data-filter') || 'todos';
+          filterSetor = f;
+          document.querySelectorAll('.md-filter-btn').forEach((b) => b.classList.toggle('is-active', b === btn));
+          render();
+        });
+      });
+      const inp = document.getElementById('md-search');
+      if (inp) {
+        inp.addEventListener('input', () => {
+          searchQ = inp.value;
+          render();
+        });
+      }
+    }
+
+    const elLoad = document.getElementById('md-loading');
+    const elDenied = document.getElementById('md-denied');
+    const elPanel = document.getElementById('md-panel');
+
+    if (!allowed) {
+      if (elLoad) elLoad.hidden = true;
+      if (elDenied) elDenied.hidden = false;
+    } else {
+      if (elLoad) elLoad.hidden = true;
+      if (elPanel) elPanel.hidden = false;
+      wireFilters();
+      render();
+    }
+  </script>
+</body>
+</html>
